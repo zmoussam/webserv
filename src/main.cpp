@@ -11,6 +11,21 @@
 
 const int BUFFER_SIZE = 1024;
 
+int ft_atoi(const char *str) {
+    int i = 0;
+    int sign = 1;
+    int res = 0;
+
+    while (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' || str[i] == '\v' ||
+            str[i] == '\f' || str[i] == '\r')
+        i++;
+    if (str[i] == '-' || str[i] == '+')
+        sign = (str[i++] == '-') ? -1 : 1;
+    while (str[i] >= '0' && str[i] <= '9')
+        res = res * 10 + (str[i++] - '0');
+    return (res * sign);
+}
+
 std::map<std::string, std::string> createMimeTypesMap() {
     std::map<std::string, std::string> mimeTypes;
     
@@ -130,8 +145,9 @@ void handleClientRequest(int clientSocket) {
         return;
     }
 
-    std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + type + "\r\nContent-Length: " + std::to_string(file.length()) + "\r\n\r\n" + file;
-    sendResponse(clientSocket, response);
+    std::stringstream response; 
+    response << "HTTP/1.1 200 OK\r\nContent-Type: " << type + "\r\nContent-Length: " << file.length() << "\r\n\r\n" << file;
+    sendResponse(clientSocket, response.str());
 }
 
 int main(int argc, char** argv) {
@@ -148,7 +164,7 @@ int main(int argc, char** argv) {
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_addr.s_addr = INADDR_ANY;
-    serverAddress.sin_port = htons(std::atoi(argv[1]));
+    serverAddress.sin_port = htons(ft_atoi(argv[1]));
 	
 	if (chdir(argv[2]) < 0) {
 		std::cerr << "Error changing directory" << std::endl;

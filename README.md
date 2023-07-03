@@ -5,7 +5,7 @@ A recreation of Nginx and Apache webservers in C++
 ## TODO
 
 - [x] HTTP Request Parsing
-- [ ] HTTP Response Generation
+- [x] HTTP Response Generation
 - [ ] POST, PUT, DELETE, HEAD, OPTIONS, TRACE, CONNECT methods support
 - [ ] Parse and handle configuration file
 - [ ] Parse and handle CGI scripts
