@@ -134,7 +134,11 @@ void handleClientRequest(int clientSocket) {
     sendResponse(clientSocket, response);
 }
 
-int main() {
+int main(int argc, char** argv) {
+	if (argc != 3) {
+		std::cerr << "Usage: " << argv[0] << " <port> <directory>" << std::endl;
+		return 1;
+	}
     int serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (serverSocket < 0) {
         std::cerr << "Error creating server socket" << std::endl;
@@ -143,9 +147,13 @@ int main() {
 
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(8080);
     serverAddress.sin_addr.s_addr = INADDR_ANY;
-
+    serverAddress.sin_port = htons(std::atoi(argv[1]));
+	
+	if (chdir(argv[2]) < 0) {
+		std::cerr << "Error changing directory" << std::endl;
+		return 1;
+	}
     int reuse = 1;
     if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&reuse, sizeof(reuse)) < 0) {
         std::cerr << "Error setting socket options" << std::endl;
@@ -162,7 +170,7 @@ int main() {
         return 1;
     }
 
-    std::cout << "Server is listening on port http://127.0.0.1:8080" << std::endl;
+    std::cout << "Server is listening on port http://127.0.0.1:" << argv[1] << std::endl;
     while (true) {
         sockaddr_in clientAddress;
         socklen_t clientAddressLength = sizeof(clientAddress);
