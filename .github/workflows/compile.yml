@@ -11,22 +11,23 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-      
-    - name: Set up build environment
-      uses: actions/setup-cpp@v2
-      with:
-        cpp-version: '98'
-        
-    - name: Build
-      run: |
-        make
-        
-    - name: Archive artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: binaries
-        path: webserv/bin
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ make
+
+      - name: Build
+        run: |
+          cd webserv
+          make
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: binaries
+          path: webserv/bin
