@@ -1,0 +1,32 @@
+name: C++ Compilation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      
+    - name: Set up build environment
+      uses: actions/setup-cpp@v2
+      with:
+        cpp-version: '98'
+        
+    - name: Build
+      run: |
+        make
+        
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: binaries
+        path: webserv/bin
