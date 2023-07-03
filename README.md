@@ -11,7 +11,7 @@ We use a commit message convention to ensure clear and meaningful communication 
 - **edit**: Used when making changes to an existing file or files in the server that do not fall under any of the other commit types.
 - **feat**: Used when adding a new feature or functionality to the server.
 - **fix**: Used when fixing a bug or resolving an issue in the server.
-- **refactor**: Used when making code changes that improve the structure, design, or organization of the server without changing its behavior.
+- **ref**: Used when making code changes that improve the structure, design, or organization of the server without changing its behavior.
 - **chore**: Used for routine tasks, maintenance, or general housekeeping, such as updating dependencies, cleaning up code, or modifying build scripts.
 - **docs**: Used for changes or additions to documentation, comments, or code examples.
 - **test**: Used when adding or modifying test cases or related code to improve test coverage.
