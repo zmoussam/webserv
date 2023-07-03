@@ -59,6 +59,7 @@ webserv/
 │ │ └── Utils.hpp
 │ └── Configuration/
 │ └── Configuration.hpp
+└── Makefile
 ```
 
 - `src/`: This directory contains the source files of the project.
