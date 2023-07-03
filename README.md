@@ -17,7 +17,7 @@ We use a commit message convention to ensure clear and meaningful communication 
 - **test**: Used when adding or modifying test cases or related code to improve test coverage.
 - **style**: Used for code style changes that do not affect the server's behavior, such as formatting, indentation, or whitespace modifications.
 - **perf**: Used when making performance improvements or optimizations to the server.
-- **revert**: Used when reverting a previous commit or a series of commits.
+- **rev**: Used when reverting a previous commit or a series of commits.
 - **merge**: Used for merge commits, indicating the integration of changes from one branch into another.
 - **config**: Used when modifying server configurations or settings.
 
