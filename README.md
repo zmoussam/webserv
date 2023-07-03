@@ -2,6 +2,18 @@
 
 A recreation of Nginx and Apache webservers in C++
 
+## TODO
+
+- [x] HTTP Request Parsing
+- [ ] HTTP Response Generation
+- [ ] Parse and handle configuration file
+- [ ] Parse and handle CGI scripts
+- [ ] Parse and handle SSL certificates
+- [ ] Error handling
+- [ ] File I/O
+- [ ] Percent encoding and decoding for URLs
+- [ ] ...
+
 ## Commit Message Convention
 
 We use a commit message convention to ensure clear and meaningful communication about the changes made in each commit. When making commits, please follow the naming convention below:
@@ -13,12 +25,12 @@ We use a commit message convention to ensure clear and meaningful communication 
 - **fix**: Used when fixing a bug or resolving an issue in the server.
 - **ref**: Used when making code changes that improve the structure, design, or organization of the server without changing its behavior.
 - **chore**: Used for routine tasks, maintenance, or general housekeeping, such as updating dependencies, cleaning up code, or modifying build scripts.
-- **doc**: Used for changes or additions to documentation, comments, or code examples.
-- **tst**: Used when adding or modifying test cases or related code to improve test coverage.
+- **docs**: Used for changes or additions to documentation, comments, or code examples.
+- **test**: Used when adding or modifying test cases or related code to improve test coverage.
 - **style**: Used for code style changes that do not affect the server's behavior, such as formatting, indentation, or whitespace modifications.
 - **perf**: Used when making performance improvements or optimizations to the server.
 - **rev**: Used when reverting a previous commit or a series of commits.
-- **mrg**: Used for merge commits, indicating the integration of changes from one branch into another.
+- **merge**: Used for merge commits, indicating the integration of changes from one branch into another.
 - **cfg**: Used when modifying server configurations or settings.
 
 ## Folder Structure
