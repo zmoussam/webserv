@@ -23,7 +23,6 @@ jobs:
 
       - name: Build
         run: |
-          cd webserv
           make
 
       - name: Archive artifacts
