@@ -6,6 +6,9 @@ A recreation of Nginx and Apache webservers in C++
 
 We use a commit message convention to ensure clear and meaningful communication about the changes made in each commit. When making commits, please follow the naming convention below:
 
+- **add**: Used when adding a new file or files to the server.
+- **rm**: Used when removing a file or files from the server.
+- **edit**: Used when making changes to an existing file or files in the server that do not fall under any of the other commit types.
 - **feat**: Used when adding a new feature or functionality to the server.
 - **fix**: Used when fixing a bug or resolving an issue in the server.
 - **refactor**: Used when making code changes that improve the structure, design, or organization of the server without changing its behavior.
