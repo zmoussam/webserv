@@ -51,7 +51,7 @@ void Request::parseQueries(const std::string& request) {
 	if (pos == std::string::npos) {
 		return;
 	}
-
+	queries.erase(0, pos + 1);
 	std::string query;
 	std::string key;
 	std::string value;
