@@ -1,33 +1,32 @@
 CC = c++
-CFLAGS = -Wall -Wextra -Werror -std=c++98
+CFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 LDFLAGS =
 
 SRC_DIR = src
-INC_DIR = include
+INC_DIR = inc
 OBJ_DIR = obj
 BIN_DIR = bin
 
 TARGET = webserv
 
-SRCS = $(wildcard $(SRC_DIR)/*.cpp)
-OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
-DEPS = $(wildcard $(INC_DIR)/*.hpp)
+SRCS := $(shell find $(SRC_DIR) -name "*.cpp")
+OBJS := $(addprefix $(OBJ_DIR)/,$(patsubst $(SRC_DIR)/%,%,$(SRCS:.cpp=.o)))
 
-all: $(BIN_DIR)/$(TARGET)
+all: $(TARGET)
 
-$(BIN_DIR)/$(TARGET): $(OBJS)
+$(TARGET): $(OBJS)
 	@mkdir -p $(BIN_DIR)
-	$(CC) $(LDFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(BIN_DIR)/$@ $^
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEPS)
-	@mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) -I$(INC_DIR) -c $< -o $@
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(OBJ_DIR)/$(*D)
+	$(CC) $(CFLAGS) -I$(INC_DIR) -c -o $@ $<
 
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	rm -rf $(OBJ_DIR)
 
 fclean: clean
-	rm -f $(BIN_DIR)/$(TARGET)
+	rm -rf $(BIN_DIR)
 
 re: fclean all
 

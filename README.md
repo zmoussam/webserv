@@ -5,7 +5,7 @@ A recreation of Nginx and Apache webservers in C++
 ## TODO
 
 - [x] HTTP Request Parsing
-- [x] HTTP Response Generation
+- [ ] HTTP Response Generation
 - [ ] POST, PUT, DELETE, HEAD, OPTIONS, TRACE, CONNECT methods support
 - [ ] Parse and handle configuration file
 - [ ] Parse and handle CGI scripts
@@ -34,59 +34,6 @@ We use a commit message convention to ensure clear and meaningful communication 
 - **merge**: Used for merge commits, indicating the integration of changes from one branch into another.
 - **cfg**: Used when modifying server configurations or settings.
 
-## Folder Structure
-
-The project follows the following folder structure:
-```
-webserv/
-├── src/
-│ ├── main.cpp
-│ ├── Server/
-│ │ ├── Server.hpp
-│ │ └── Server.cpp
-│ ├── Request/
-│ │ ├── Request.hpp
-│ │ └── Request.cpp
-│ ├── Response/
-│ │ ├── Response.hpp
-│ │ └── Response.cpp
-│ ├── HTTP/
-│ │ ├── HTTP.hpp
-│ │ └── HTTP.cpp
-│ ├── Utils/
-│ │ ├── Utils.hpp
-│ │ └── Utils.cpp
-│ └── Configuration/
-│ ├── Configuration.hpp
-│ └── Configuration.cpp
-├── include/
-│ ├── Server/
-│ │ └── Server.hpp
-│ ├── Request/
-│ │ └── Request.hpp
-│ ├── Response/
-│ │ └── Response.hpp
-│ ├── HTTP/
-│ │ └── HTTP.hpp
-│ ├── Utils/
-│ │ └── Utils.hpp
-│ └── Configuration/
-│ └── Configuration.hpp
-└── Makefile
-```
-
-- `src/`: This directory contains the source files of the project.
-  - `main.cpp`: The main entry point of the server.
-  - `Server/`: Contains the server-related classes and implementation.
-  - `Request/`: Contains the classes and implementation related to handling HTTP requests.
-  - `Response/`: Contains the classes and implementation related to generating HTTP responses.
-  - `HTTP/`: Contains the HTTP-related classes and implementation.
-  - `Utils/`: Contains utility classes and functions used throughout the project.
-  - `Configuration/`: Contains classes and implementation for server configuration.
-
-- `include/`: This directory contains the header files of the project. It mirrors the structure of the `src/` directory.
-
-Feel free to modify the folder structure or add more folders/files as needed for your project. Make sure to keep the folder structure organized and consistent to enhance code maintainability and readability.
 
 ## Resources
 
