@@ -14,7 +14,7 @@ Server::Server(std::string address, int port) {
     _serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (_serverSocket < 0) {
         std::cerr << "Error: socket() failed" << std::endl;
-        exit(1);
+        _exit(1);
     }
     _serverAddress.sin_family = AF_INET;
     _serverAddress.sin_addr.s_addr = inet_addr(address.c_str());
@@ -22,12 +22,12 @@ Server::Server(std::string address, int port) {
 
     if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&reuse, sizeof(reuse)) < 0) {
         std::cerr << "Error: setsockopt() failed" << std::endl;
-        exit(1);
+        _exit(1);
     }
 
     if (bind(_serverSocket, (struct sockaddr*)&_serverAddress, sizeof(_serverAddress)) < 0) {
         std::cerr << "Error: bind() failed" << std::endl;
-        exit(1);
+        _exit(1);
     }
 }
 
@@ -54,7 +54,7 @@ int Server::getPort() const {
 void Server::start(void) {
     if (listen(_serverSocket, 10) < 0) {
         std::cerr << "Error: listen() failed" << std::endl;
-        exit(1);
+        _exit(1);
     }
 
     std::cout << "Server started on " << "http://" << inet_ntoa(_serverAddress.sin_addr) << ":" << _port << std::endl;

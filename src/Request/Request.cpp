@@ -113,7 +113,7 @@ void Request::handleRequest(int clientSocket) {
 
 	if (bytesRead < 0) {
 		std::cerr << "Error: recv() failed" << std::endl;
-		exit(1);
+		_exit(1);
 	}
 
 	_buffer[bytesRead] = '\0';
@@ -135,7 +135,7 @@ void Request::handleRequest(int clientSocket) {
 		std::cout << it->first << ": " << it->second << std::endl;
 		it++;
 	}
-	std::unordered_map<std::string, std::string>::iterator it2 = _cookies.begin();
+	std::map<std::string, std::string>::iterator it2 = _cookies.begin();
 	while (it2 != _cookies.end()) {
 		std::cout << it2->first << ": " << it2->second << std::endl;
 		it2++;

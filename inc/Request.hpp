@@ -6,7 +6,6 @@
 # include <netinet/in.h>
 # include <arpa/inet.h>
 # include <unistd.h>
-# include <unordered_map>
 # include <map>
 # include <sstream>
 // Request class is used to store information about the request
@@ -75,10 +74,10 @@ class Request {
 		std::string _method; // POST, GET, PUT, DELETE, etc.
 		std::string _path; // /index.html or /users/1
 		std::string _protocol; // HTTP/1.1
-		std::unordered_map<std::string, std::string> _headers; // Headers are used to send additional information to the server
+		std::map<std::string, std::string> _headers; // Headers are used to send additional information to the server
 		std::string _body; // Request body (POST, PUT, etc.) usually JSON format and used to send data to the server
 		std::map<std::string, std::string> _queries; // Queries are used to send additional information to the server (GET) https://example.com?query=1&query=2 etc
-		std::unordered_map<std::string, std::string> _cookies; // Cookies are used to store information about the user (session, etc.)
+		std::map<std::string, std::string> _cookies; // Cookies are used to store information about the user (session, etc.)
 };
 
 
