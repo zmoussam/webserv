@@ -8,6 +8,8 @@
 # include <unistd.h>
 # include <map>
 # include <sstream>
+#define unused(x) (void)(x)
+
 // Request class is used to store information about the request
 // For example, if the client sends a request to the server:
 

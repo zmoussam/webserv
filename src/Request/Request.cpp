@@ -127,38 +127,38 @@ void Request::handleRequest(int clientSocket) {
 
 
 	// "log the request"
-	std::cout << "- - " << "\"" << _method << " " << _path << " " << _protocol << "\" "  << std::endl;
+	std::cout << " - - " << "\"" << _method << " " << _path << " " << _protocol << "\" "  << std::endl;
 	
 	// !! TESTING CODE !! //
 	// std::cout << request << std::endl;
-	std::cout << "Method: " << _method << std::endl;
-	std::cout << "Path: " << _path << std::endl;
-	std::cout << "Arguments: " << std::endl;
-	std::map<std::string, std::string>::iterator it = _queries.begin();
-	while (it != _queries.end()) {
-		std::cout << it->first << ":= " << it->second << std::endl;
-		it++;
-	}
-	std::cout << "Cookies: " << std::endl;
-	std::map<std::string, std::string>::iterator it2 = _cookies.begin();
-	while (it2 != _cookies.end()) {
-		std::cout << it2->first << ":= " << it2->second << std::endl;
-		it2++;
-	}
-	std::cout << "Headers: " << std::endl;
-	std::map<std::string, std::string>::iterator it3 = _headers.begin();
-	while (it3 != _headers.end()) {
-		std::cout << it3->first << ":= " << it3->second << std::endl;
-		it3++;
-	}
-	// !! TESTING CODE !! //
+	// std::cout << "Method: " << _method << std::endl;
+	// std::cout << "Path: " << _path << std::endl;
+	// std::cout << "Arguments: " << std::endl;
+	// std::map<std::string, std::string>::iterator it = _queries.begin();
+	// while (it != _queries.end()) {
+	// 	std::cout << it->first << ":= " << it->second << std::endl;
+	// 	it++;
+	// }
+	// std::cout << "Cookies: " << std::endl;
+	// std::map<std::string, std::string>::iterator it2 = _cookies.begin();
+	// while (it2 != _cookies.end()) {
+	// 	std::cout << it2->first << ":= " << it2->second << std::endl;
+	// 	it2++;
+	// }
+	// std::cout << "Headers: " << std::endl;
+	// std::map<std::string, std::string>::iterator it3 = _headers.begin();
+	// while (it3 != _headers.end()) {
+	// 	std::cout << it3->first << ":= " << it3->second << std::endl;
+	// 	it3++;
+	// }
 
 	// Send a response back to the client (for testing purposes for now	)
-	std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nServer: Webserv\r\n\r\n<center><h1>OK</h1></center>";
-	ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0);
-	if (bytesSent < 0) {
-		std::cerr << "Error: send() Request.cpp 83:0" << std::endl;
-	}
+	// std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nServer: Webserv\r\n\r\n<center><h1>OK</h1></center>";
+	// ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0);
+	// if (bytesSent < 0) {
+	// 	std::cerr << "Error: send() Request.cpp 83:0" << std::endl;
+	// }
+	// !! TESTING CODE !! //
 }
 
 // Clear the internal data structures of the Request object

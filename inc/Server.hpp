@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "Request.hpp"
+#include "Response.hpp"
 
 class Server {
 	private:

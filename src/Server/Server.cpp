@@ -63,6 +63,7 @@ void Server::start(void) {
         sockaddr_in clientAddress;
         socklen_t clientAddressLength = sizeof(clientAddress);
         Request request;
+        Response response;
         int clientSocket = accept(_serverSocket, (struct sockaddr*)&clientAddress, &clientAddressLength);
 
         if (clientSocket < 0) {
@@ -70,6 +71,8 @@ void Server::start(void) {
             continue;
         }
         request.handleRequest(clientSocket);
+        response.generateResp(request);
+        response.sendResp(clientSocket);
         close(clientSocket);
         request.clear();
     }
