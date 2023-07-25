@@ -1,4 +1,5 @@
 # include "Response.hpp"
+
 Response::Response()
 	: _protocol(""),
 	_status_code(""),
@@ -41,22 +42,24 @@ std::string getContentType(std::string filename) {
     return type;
 }
 
-void	Response::generateBody(Request &request) {
-	std::string path = request.getPath();
+void Response::generateBody(Request &request) {
+    std::string path = request.getPath();
 
-	if (path == "/") {
-		path = "/index.html";
-	}
-	path = "www" + path;
-	std::ifstream file(path);
-	std::string line;
-	if (!file.is_open())
-		return ;
-	while (std::getline(file, line))
-	{
-		_body += line;
-		_body += "\n";
-	}
+    if (path == "/") {
+        path = "/index.html";
+    }
+    path = "www" + path;
+
+    std::ifstream file(path.c_str());
+    std::string line;
+
+    if (!file.is_open())
+        return;
+
+    while (std::getline(file, line)) {
+        _body += line;
+        _body += "\n";
+    }
 }
 
 void Response::generateResp(Request &request) {
@@ -72,7 +75,9 @@ void Response::sendResp(int clientSocket) {
 
 	response += "Server: " + _server + "\r\n";
 	response += "Content-Type: " + _content_type + "\r\n";
-	response += "Content-Length: " + std::to_string(_content_length) + "\r\n";
+	std::stringstream ss;
+	ss << _content_length;
+	response += "Content-Length: " + ss.str() + "\r\n";
 	response += "\r\n";
 	response += _body;
 	
