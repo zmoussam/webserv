@@ -1,4 +1,4 @@
-![image](https://github.com/Anarbb/webserv/assets/65725801/9ccd107f-e5dc-4aaf-a7da-bd2fb670965a)# Webserv
+# Webserv
 
 A recreation of Nginx and Apache webservers in C++
 
