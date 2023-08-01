@@ -8,12 +8,6 @@ A recreation of Nginx and Apache webservers in C++
 - [x] HTTP Request Parsing
 - [ ] HTTP Response Generation
 - [ ] GET, POST, DELETE methods support
-- [ ] Parse and handle configuration file
-- [ ] Parse and handle CGI scripts
-- [ ] Parse and handle SSL certificates
-- [ ] Error handling
-- [ ] File I/O
-- [ ] Percent encoding and decoding for URLs
 - [ ] ...
 
 ## [Evaluation](https://htmlpreview.github.io/?https://github.com/rphlr/42-Evals/blob/main/Rank05/webserv/index.html)
