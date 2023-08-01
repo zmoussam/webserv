@@ -9,8 +9,7 @@ A recreation of Nginx and Apache webservers in C++
 - [ ] HTTP Response Generation
 - [ ] GET, POST, DELETE methods support
 - [ ] ...
-
-## [Evaluation](https://htmlpreview.github.io/?https://github.com/rphlr/42-Evals/blob/main/Rank05/webserv/index.html)
+- [ ] [Evaluation](https://htmlpreview.github.io/?https://github.com/rphlr/42-Evals/blob/main/Rank05/webserv/index.html)
 
 
 
