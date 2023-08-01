@@ -16,7 +16,7 @@ A recreation of Nginx and Apache webservers in C++
 - [ ] Percent encoding and decoding for URLs
 - [ ] ...
 
-## [Evaluation](https://htmlpreview.github.io/?https%3A%2F%2Fgithub.com%2Frphlr%2F42-Evals%2Fblob%2Fmain%2FRank05%2Fwebserv%2Findex.html=)
+## [Evaluation](https://htmlpreview.github.io/?https://github.com/rphlr/42-Evals/blob/main/Rank05/webserv/index.html)
 
 
 
