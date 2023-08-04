@@ -1,4 +1,4 @@
-name: Webserv compilation
+name: Webserv compilation and Siege test
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,8 +25,28 @@ jobs:
         run: |
           make
 
-      - name: Archive artifacts
+      - name: Install Siege
+        run: |
+          sudo apt-get install -y siege
+
+      - name: Run Server
+        run: |
+          nohup bin/webserv > server_log.txt 2>&1 &
+
+      - name: Wait for Server to Start
+        run: |
+          sleep 5  # Wait for the server to start, adjust the duration if needed
+
+      - name: Run Siege Test
+        run: |
+          siege -c 10 -t 2M http://localhost:8000 > siege_output.txt
+
+      - name: Stop Server
+        run: |
+          pkill webserv
+
+      - name: Save Siege Output as Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: binaries
-          path: bin/webserv
+          name: siege_output
+          path: siege_output.txt

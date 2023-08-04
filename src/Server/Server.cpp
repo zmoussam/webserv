@@ -97,46 +97,10 @@ void Server::start(void) {
                 request.handleRequest(clientSocket);
                 response.generateResp(request);
                 response.sendResp(clientSocket);
-                if (request.keepAlive() == 1) {
-                    keepAliveClients[clientSocket] = time(NULL);
-                }
-                else {
-                    close(clientSocket);
-                    clients.erase(clients.begin() + i);
-                    i--;
-                }
+                close(clientSocket);
+                clients.erase(clients.begin() + i);
+                i--;
             }
         }
-
-        // !!!! CODE NEEDS REFINEMENT DOWN HERE, IT'S MEGASHIT, maybe we can use threading? !!!! //
-
-        time_t current_time = time(NULL);
-        std::vector<int> clientsToRemove;
-
-        std::map<int, time_t>::iterator it = keepAliveClients.begin();
-        for (; it != keepAliveClients.end(); it++) {
-            int clientSocket = it->first;
-            time_t lastActivityTime = it->second;
-
-            if (current_time - lastActivityTime > 5) {
-                clientsToRemove.push_back(clientSocket);
-            }
-        }
-
-        for (size_t i = 0; i < clientsToRemove.size(); i++) {
-            int clientSocket = clientsToRemove[i];
-            close(clientSocket);
-            std::cout << "Client " << clientSocket << " timed out" << std::endl;
-
-            for (std::vector<pollfd>::iterator it = clients.begin(); it != clients.end(); ++it) {
-                if (it->fd == clientSocket) {
-                    clients.erase(it);
-                    break;
-                }
-            }
-
-            keepAliveClients.erase(clientSocket);
-        }
-        
     }
 }

@@ -175,7 +175,7 @@ int Request::handleRequest(int clientSocket) {
 	// 	std::cout << it3->first << ":= " << it3->second << std::endl;
 	// 	it3++;
 	// }
-	// std::cout << request << std::endl;
+	std::cout << request << std::endl;
 	// Send a response back to the client (for testing purposes for now	)
 	// std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nServer: Webserv\r\n\r\n<center><h1>OK</h1></center>";
 	// ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0);
