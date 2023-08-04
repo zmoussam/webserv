@@ -4,7 +4,7 @@ A recreation of Nginx and Apache webservers in C++
 
 ## TODO
 
-- [ ] Add I/O Multiplexing
+- [x] Add I/O Multiplexing
 - [x] HTTP Request Parsing
 - [ ] HTTP Response Generation
 - [ ] GET, POST, DELETE methods support
