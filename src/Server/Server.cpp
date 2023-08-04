@@ -1,5 +1,8 @@
 # include "Server.hpp"
-
+# include <vector>
+# include <poll.h>
+# include <map>
+# include <ctime>
 /**
  * Constructor for the Server class.
  * Initializes the server socket and sets up the server address.
@@ -52,28 +55,88 @@ int Server::getPort() const {
  * Handles client requests in an infinite loop.
  */
 void Server::start(void) {
-    if (listen(_serverSocket, 10) < 0) {
+    std::vector<pollfd> clients;
+    std::map<int, time_t> keepAliveClients;
+    
+    if (listen(_serverSocket, 1000) < 0) {
         std::cerr << "Error: listen() failed" << std::endl;
         _exit(1);
     }
 
+    pollfd serverpollfd = { _serverSocket, POLLIN, 0 };
+    clients.push_back(serverpollfd);
     std::cout << "Server started on " << "http://" << inet_ntoa(_serverAddress.sin_addr) << ":" << _port << std::endl;
 
     while (true) {
-        sockaddr_in clientAddress;
-        socklen_t clientAddressLength = sizeof(clientAddress);
-        Request request;
-        Response response;
-        int clientSocket = accept(_serverSocket, (struct sockaddr*)&clientAddress, &clientAddressLength);
+        int pollRes = poll(&clients[0], clients.size(), -1);
 
-        if (clientSocket < 0) {
-            std::cerr << "Error: accept() failed. continuing..." << std::endl;
-            continue;
+        if (pollRes < 0) {
+            std::cerr << "Error: poll() failed" << std::endl;
+            _exit(1);
         }
-        request.handleRequest(clientSocket);
-        response.generateResp(request);
-        response.sendResp(clientSocket);
-        close(clientSocket);
-        request.clear();
+
+        if (pollRes > 0) {
+            if (clients[0].revents & POLLIN) {
+                sockaddr_in clientAddress;
+                socklen_t clientAddressLength = sizeof(clientAddress);
+                int clientSocket = accept(_serverSocket, (struct sockaddr*)&clientAddress, &clientAddressLength);
+
+                if (clientSocket < 0) {
+                    std::cerr << "Error: accept() failed. continuing..." << std::endl;
+                    continue;
+                }
+                pollfd clientpollfd = { clientSocket, POLLIN, 0 };
+                clients.push_back(clientpollfd);
+            }
+        }
+        for (size_t i = 1; i < clients.size(); i++) {
+            if (clients[i].revents & POLLIN) {
+                Request request;
+                Response response;
+                int clientSocket = clients[i].fd;
+                request.handleRequest(clientSocket);
+                response.generateResp(request);
+                response.sendResp(clientSocket);
+                if (request.keepAlive() == 1) {
+                    keepAliveClients[clientSocket] = time(NULL);
+                }
+                else {
+                    close(clientSocket);
+                    clients.erase(clients.begin() + i);
+                    i--;
+                }
+            }
+        }
+
+        // !!!! CODE NEEDS REFINEMENT DOWN HERE, IT'S MEGASHIT, maybe we can use threading? !!!! //
+
+        time_t current_time = time(NULL);
+        std::vector<int> clientsToRemove;
+
+        std::map<int, time_t>::iterator it = keepAliveClients.begin();
+        for (; it != keepAliveClients.end(); it++) {
+            int clientSocket = it->first;
+            time_t lastActivityTime = it->second;
+
+            if (current_time - lastActivityTime > 5) {
+                clientsToRemove.push_back(clientSocket);
+            }
+        }
+
+        for (size_t i = 0; i < clientsToRemove.size(); i++) {
+            int clientSocket = clientsToRemove[i];
+            close(clientSocket);
+            std::cout << "Client " << clientSocket << " timed out" << std::endl;
+
+            for (std::vector<pollfd>::iterator it = clients.begin(); it != clients.end(); ++it) {
+                if (it->fd == clientSocket) {
+                    clients.erase(it);
+                    break;
+                }
+            }
+
+            keepAliveClients.erase(clientSocket);
+        }
+        
     }
 }

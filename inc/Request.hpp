@@ -8,8 +8,9 @@
 # include <unistd.h>
 # include <map>
 # include <sstream>
-#define unused(x) (void)(x)
-
+# include <vector>
+# include <poll.h>
+#include "Macros.hpp"
 // Request class is used to store information about the request
 // For example, if the client sends a request to the server:
 
@@ -41,7 +42,6 @@
 // _queries = {}
 // _cookies = {}
 
-#define	BUFSIZE 1024
 
 class Request {
 	public:
@@ -64,22 +64,25 @@ class Request {
 		const std::string& getBody() const;
 		const std::string& getQuery(const std::string& key) const;
 		const std::string& getCookie(const std::string& key) const;
-
-		void handleRequest(int clientSocket);
+		int keepAlive(void) const;
+		int handleRequest(int clientSocket);
+		void parseBody(const std::string& request);
 		void parseMethod(const std::string& request);
 		void parseHeaders(const std::string& request);
 		void parseQueries(const std::string& request);
 		void parseCookies(const std::string& request);
 		void clear(void);
 	private:
-		char _buffer[BUFSIZE];
+		char _buffer[BUFSIZE + 1];
 		std::string _method; // POST, GET, PUT, DELETE, etc.
+		int			_clientSocket;
 		std::string _path; // /index.html or /users/1
 		std::string _protocol; // HTTP/1.1
 		std::map<std::string, std::string> _headers; // Headers are used to send additional information to the server
 		std::string _body; // Request body (POST, PUT, etc.) usually JSON format and used to send data to the server
 		std::map<std::string, std::string> _queries; // Queries are used to send additional information to the server (GET) https://example.com?query=1&query=2 etc
 		std::map<std::string, std::string> _cookies; // Cookies are used to store information about the user (session, etc.)
+		int _keepAlive;
 };
 
 

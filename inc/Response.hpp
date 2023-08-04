@@ -7,6 +7,7 @@
 # include <fstream>
 # include <sstream>
 # include "Request.hpp"
+#include "Macros.hpp"
 
 class Response
 {

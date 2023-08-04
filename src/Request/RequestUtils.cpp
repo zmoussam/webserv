@@ -7,7 +7,8 @@ Request::Request()
 	  _headers(),
 	  _body(""),
 	  _queries(),
-	  _cookies()
+	  _cookies(),
+	  _keepAlive(1)
 {
 }
 
@@ -105,4 +106,9 @@ std::string getHeaders(const std::string& request) {
 	std::string headers = request.substr(request.find("\r\n") + 2);
 	headers = headers.substr(0, headers.find("\r\n\r\n"));
 	return headers;
+}
+
+
+int Request::keepAlive(void) const {
+	return _keepAlive;
 }

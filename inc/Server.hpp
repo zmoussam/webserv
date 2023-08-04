@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include "Request.hpp"
 #include "Response.hpp"
+#include "Macros.hpp"
 
 class Server {
 	private:

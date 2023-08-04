@@ -1,5 +1,25 @@
 #include "Request.hpp"
 
+// Parse Content Body
+void Request::parseBody(const std::string& request) {
+    std::string body;
+    std::string::size_type pos = request.find("\r\n\r\n");
+    if (pos != std::string::npos) {
+        body = request.substr(pos + 4);
+    }
+    if (body.empty()) {
+        return;
+    }
+
+    // Remove the "Transfer-Encoding: chunked" footer, if present
+    std::string::size_type footerPos = body.find("\r\n0\r\n");
+    if (footerPos != std::string::npos) {
+        body = body.substr(0, footerPos);
+    }
+
+    _body = body;
+}
+
 // Parse the "Cookie" header from the request and extract key-value pairs into _cookies map
 void Request::parseCookies(const std::string& request) {
 	// Extract headers from the request
@@ -82,13 +102,17 @@ void Request::parseHeaders(const std::string& request) {
 	std::string key;
 	std::string value;
 	std::string::size_type pos;
-
 	// Split headers by "\r\n" delimiter and extract key-value pairs
 	while ((pos = headers.find("\r\n")) != std::string::npos) {
 		header = headers.substr(0, pos);
 		headers.erase(0, pos + 2);
 		key = header.substr(0, header.find(": "));
 		value = header.substr(header.find(": ") + 2);
+		if (key == "Connection") {
+			if (value == "close") {
+				_keepAlive = 0;
+			}
+		}
 		if (key == "Cookie") {
 			continue;
 		}
@@ -106,14 +130,14 @@ void Request::parseMethod(const std::string& request) {
 }
 
 // Handle the request received on the provided client socket
-void Request::handleRequest(int clientSocket) {
+int Request::handleRequest(int clientSocket) {
 	// Receive the request from the client
 	ssize_t bytesRead = recv(clientSocket, _buffer, BUFSIZE, 0);
 	std::string request;
 
 	if (bytesRead < 0) {
 		std::cerr << "Error: recv() failed" << std::endl;
-		_exit(1);
+		return (-1);
 	}
 
 	_buffer[bytesRead] = '\0';
@@ -128,7 +152,7 @@ void Request::handleRequest(int clientSocket) {
 
 	// "log the request"
 	std::cout << " - - " << "\"" << _method << " " << _path << " " << _protocol << "\" "  << std::endl;
-	
+	// std::cout << "Keep-Alive: " << _keepAlive << std::endl;
 	// !! TESTING CODE !! //
 	// std::cout << request << std::endl;
 	// std::cout << "Method: " << _method << std::endl;
@@ -151,7 +175,7 @@ void Request::handleRequest(int clientSocket) {
 	// 	std::cout << it3->first << ":= " << it3->second << std::endl;
 	// 	it3++;
 	// }
-
+	// std::cout << request << std::endl;
 	// Send a response back to the client (for testing purposes for now	)
 	// std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nServer: Webserv\r\n\r\n<center><h1>OK</h1></center>";
 	// ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0);
@@ -159,6 +183,7 @@ void Request::handleRequest(int clientSocket) {
 	// 	std::cerr << "Error: send() Request.cpp 83:0" << std::endl;
 	// }
 	// !! TESTING CODE !! //
+	return (0);
 }
 
 // Clear the internal data structures of the Request object
