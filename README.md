@@ -4,16 +4,13 @@ A recreation of Nginx and Apache webservers in C++
 
 ## TODO
 
+- [ ] Add I/O Multiplexing
 - [x] HTTP Request Parsing
 - [ ] HTTP Response Generation
-- [ ] POST, PUT, DELETE, HEAD, OPTIONS, TRACE, CONNECT methods support
-- [ ] Parse and handle configuration file
-- [ ] Parse and handle CGI scripts
-- [ ] Parse and handle SSL certificates
-- [ ] Error handling
-- [ ] File I/O
-- [ ] Percent encoding and decoding for URLs
-- [ ] ...
+- [ ] GET, POST, DELETE methods support
+- [ ] [Evaluation tests](https://htmlpreview.github.io/?https://github.com/rphlr/42-Evals/blob/main/Rank05/webserv/index.html)
+
+
 
 ## Commit Message Convention
 
