@@ -32,14 +32,10 @@ jobs:
       - name: Run Server
         run: |
           nohup bin/webserv > server_log.txt 2>&1 &
-
-      - name: Wait for Server to Start
-        run: |
-          sleep 5  # Wait for the server to start, adjust the duration if needed
-
+          sleep 1
       - name: Run Siege Test
         run: |
-          siege -c 10 -t 2M http://localhost:8000 > siege_output.txt
+          siege -c 10 -t 2M http://127.0.0.1:8000 > siege_output.txt
 
       - name: Stop Server
         run: |
