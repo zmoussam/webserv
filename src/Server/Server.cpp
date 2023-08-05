@@ -3,6 +3,10 @@
 # include <poll.h>
 # include <map>
 # include <ctime>
+# include <fcntl.h>
+
+std::map<std::string, std::string> mimeTypes = getMimeTypes();
+
 /**
  * Constructor for the Server class.
  * Initializes the server socket and sets up the server address.
@@ -58,11 +62,22 @@ void Server::start(void) {
     std::vector<pollfd> clients;
     std::map<int, time_t> keepAliveClients;
     
-    if (listen(_serverSocket, 1000) < 0) {
+    if (listen(_serverSocket, 1024) < 0) {
         std::cerr << "Error: listen() failed" << std::endl;
         _exit(1);
     }
-
+    int flags = fcntl(_serverSocket, F_GETFL, 0);
+    if (flags == -1) {
+        std::cerr << "Error getting file flags: " << strerror(errno) << std::endl;
+        close(_serverSocket);
+        _exit(1);
+    }
+    flags |= O_NONBLOCK;
+    if (fcntl(_serverSocket, F_SETFL, flags) == -1) {
+        std::cerr << "Error setting file flags: " << strerror(errno) << std::endl;
+        close(_serverSocket);
+        _exit(1);
+    }
     pollfd serverpollfd = { _serverSocket, POLLIN, 0 };
     clients.push_back(serverpollfd);
     std::cout << "Server started on " << "http://" << inet_ntoa(_serverAddress.sin_addr) << ":" << _port << std::endl;
@@ -81,6 +96,18 @@ void Server::start(void) {
                 socklen_t clientAddressLength = sizeof(clientAddress);
                 int clientSocket = accept(_serverSocket, (struct sockaddr*)&clientAddress, &clientAddressLength);
 
+                int flags = fcntl(clientSocket, F_GETFL, 0);
+                if (flags == -1) {
+                    std::cerr << "Error getting file flags: " << strerror(errno) << std::endl;
+                    close(clientSocket);
+                    continue;
+                }
+                flags |= O_NONBLOCK;
+                if (fcntl(clientSocket, F_SETFL, flags) == -1) {
+                    std::cerr << "Error setting file flags: " << strerror(errno) << std::endl;
+                    close(clientSocket);
+                    continue;
+                }
                 if (clientSocket < 0) {
                     std::cerr << "Error: accept() failed. continuing..." << std::endl;
                     continue;
@@ -91,15 +118,25 @@ void Server::start(void) {
         }
         for (size_t i = 1; i < clients.size(); i++) {
             if (clients[i].revents & POLLIN) {
-                Request request;
-                Response response;
-                int clientSocket = clients[i].fd;
-                request.handleRequest(clientSocket);
-                response.generateResp(request);
-                response.sendResp(clientSocket);
-                close(clientSocket);
-                clients.erase(clients.begin() + i);
-                i--;
+                {
+                    Request request;
+                    Response response;
+                    int clientSocket = clients[i].fd;
+                    char buffer[1];
+                    int recvRes = recv(clientSocket, buffer, sizeof(buffer), MSG_PEEK);
+                    if (recvRes == 0 || (recvRes < 0 && errno != EWOULDBLOCK)) {
+                        close(clientSocket);
+                        clients.erase(clients.begin() + i);
+                        i--;
+                        continue;
+                    }
+                    request.handleRequest(clientSocket);
+                    response.generateResp(request, mimeTypes);
+                    response.sendResp(clientSocket);
+                    close(clientSocket);
+                    clients.erase(clients.begin() + i);
+                    i--;
+                }
             }
         }
     }

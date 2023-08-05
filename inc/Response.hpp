@@ -15,7 +15,7 @@ class Response
 	public:
 		Response();
 		~Response();
-		void	generateResp(Request &request);
+		void	generateResp(Request &request, std::map<std::string, std::string> &mimeTypes);
 		void	generateBody(Request &request);
 		void	sendResp(int clientSocket);
 	private:
@@ -29,3 +29,4 @@ class Response
 };
 
 std::string getContentType(std::string filename);
+std::map<std::string, std::string> getMimeTypes(void);
