@@ -35,7 +35,7 @@ jobs:
           sleep 1
       - name: Run Siege Test
         run: |
-          siege -b -c 10 -t 1M http://127.0.0.1:8000 > siege_output.txt
+          siege -b -c 100 -t 1M http://127.0.0.1:8000 > siege_output.txt
 
       - name: Stop Server
         run: |
