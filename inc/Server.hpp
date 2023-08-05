@@ -9,6 +9,7 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Macros.hpp"
+#include "Utils.hpp"
 
 class Server {
 	private:

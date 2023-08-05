@@ -29,4 +29,3 @@ class Response
 };
 
 std::string getContentType(std::string filename);
-std::map<std::string, std::string> getMimeTypes(void);

@@ -1,6 +1,4 @@
-#include <iostream>
-#include <map>
-#include <string>
+# include "Utils.hpp"
 
 std::map<std::string, std::string> getMimeTypes(void)
 {
