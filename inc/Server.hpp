@@ -26,6 +26,5 @@ class Server {
 		const std::string& getAddress() const;
 		int getPort() const;
 
-		void start();
-		void stop();
+		int start();
 };

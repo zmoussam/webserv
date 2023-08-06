@@ -21,7 +21,7 @@ Server::Server(std::string address, int port) {
     _serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (_serverSocket < 0) {
         std::cerr << "Error: socket() failed" << std::endl;
-        _exit(1);
+        return;
     }
     _serverAddress.sin_family = AF_INET;
     _serverAddress.sin_addr.s_addr = inet_addr(address.c_str());
@@ -29,12 +29,12 @@ Server::Server(std::string address, int port) {
 
     if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&reuse, sizeof(reuse)) < 0) {
         std::cerr << "Error: setsockopt() failed" << std::endl;
-        _exit(1);
+        return;
     }
 
     if (bind(_serverSocket, (struct sockaddr*)&_serverAddress, sizeof(_serverAddress)) < 0) {
         std::cerr << "Error: bind() failed" << std::endl;
-        _exit(1);
+        return;
     }
 }
 
@@ -58,25 +58,25 @@ int Server::getPort() const {
  * Starts the server by listening for incoming client connections.
  * Handles client requests in an infinite loop.
  */
-void Server::start(void) {
+int Server::start(void) {
     std::vector<pollfd> clients;
     std::map<int, time_t> keepAliveClients;
     
     if (listen(_serverSocket, 1024) < 0) {
         std::cerr << "Error: listen() failed" << std::endl;
-        _exit(1);
+        return (ERROR);
     }
     int flags = fcntl(_serverSocket, F_GETFL, 0);
     if (flags == -1) {
         std::cerr << "Error getting file flags: " << strerror(errno) << std::endl;
         close(_serverSocket);
-        _exit(1);
+        return (ERROR);
     }
     flags |= O_NONBLOCK;
     if (fcntl(_serverSocket, F_SETFL, flags) == -1) {
         std::cerr << "Error setting file flags: " << strerror(errno) << std::endl;
         close(_serverSocket);
-        _exit(1);
+        return (ERROR);
     }
     pollfd serverpollfd = { _serverSocket, POLLIN, 0 };
     clients.push_back(serverpollfd);
@@ -87,7 +87,7 @@ void Server::start(void) {
 
         if (pollRes < 0) {
             std::cerr << "Error: poll() failed" << std::endl;
-            _exit(1);
+            return (ERROR);
         }
 
         if (pollRes > 0) {
