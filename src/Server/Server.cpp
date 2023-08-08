@@ -61,7 +61,8 @@ int Server::getPort() const {
 int Server::start(void) {
     std::vector<pollfd> clients;
     std::map<int, time_t> keepAliveClients;
-    
+    std::vector<Request> requests;
+    std::vector<Response> responses;
     if (listen(_serverSocket, 1024) < 0) {
         std::cerr << "Error: listen() failed" << std::endl;
         return (ERROR);
@@ -83,7 +84,7 @@ int Server::start(void) {
     std::cout << "Server started on " << "http://" << inet_ntoa(_serverAddress.sin_addr) << ":" << _port << std::endl;
 
     while (true) {
-        int pollRes = poll(&clients[0], clients.size(), -1);
+        int pollRes = poll(&clients[0], clients.size(), 0);
 
         if (pollRes < 0) {
             std::cerr << "Error: poll() failed" << std::endl;
@@ -118,26 +119,25 @@ int Server::start(void) {
         }
         for (size_t i = 1; i < clients.size(); i++) {
             if (clients[i].revents & POLLIN) {
-                {
-                    Request request;
-                    Response response;
-                    int clientSocket = clients[i].fd;
-                    char buffer[1];
-                    int recvRes = recv(clientSocket, buffer, sizeof(buffer), MSG_PEEK);
-                    if (recvRes == 0 || (recvRes < 0 && errno != EWOULDBLOCK)) {
-                        close(clientSocket);
-                        clients.erase(clients.begin() + i);
-                        i--;
-                        continue;
-                    }
-                    request.handleRequest(clientSocket);
-                    response.generateResp(request, mimeTypes);
-                    response.sendResp(clientSocket);
-                    close(clientSocket);
+                requests.push_back(Request());
+                responses.push_back(Response());
+                responses[i - 1].setSocket(clients[i].fd);
+                char buffer[1];
+                int recvRes = recv(responses[i - 1].getSocket(), buffer, sizeof(buffer), MSG_PEEK);
+                if (recvRes == 0 || (recvRes < 0 && errno != EWOULDBLOCK)) {
+                    close(responses[i - 1].getSocket());
                     clients.erase(clients.begin() + i);
-                    i--;
+                    requests.erase(requests.begin() + i - 1); // Remove corresponding Request
+                    responses.erase(responses.begin() + i - 1); // Remove corresponding Response
+                    i--; // Do not increment i in this case
+                    continue;
                 }
+                requests[i - 1].handleRequest(responses[i - 1].getSocket());
+                responses[i - 1].generateResp(requests[i - 1], mimeTypes);
+                responses[i - 1].sendResp(responses[i - 1].getSocket());
+                close(responses[i - 1].getSocket());
             }
         }
+
     }
 }
