@@ -41,7 +41,7 @@ void Response::generateBody(Request &request) {
     if (path == "/") {
         path = "/index.html";
     }
-    path = "/Users/aarbaoui/goinfre" + path;
+    path = "www" + path;
     _filePath = path;
     std::ifstream file(path.c_str());
     std::string line;
