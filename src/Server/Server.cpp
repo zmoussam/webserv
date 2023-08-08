@@ -60,85 +60,126 @@ int Server::getPort() const {
  */
 int Server::start(void) {
     std::vector<pollfd> clients;
-    std::map<int, time_t> keepAliveClients;
-    std::vector<Request> requests;
-    std::vector<Response> responses;
+    std::map<int, Request> requests;
+    std::map<int, Response> responses;
+
     if (listen(_serverSocket, 1024) < 0) {
         std::cerr << "Error: listen() failed" << std::endl;
         return (ERROR);
     }
-    int flags = fcntl(_serverSocket, F_GETFL, 0);
-    if (flags == -1) {
-        std::cerr << "Error getting file flags: " << strerror(errno) << std::endl;
-        close(_serverSocket);
-        return (ERROR);
-    }
-    flags |= O_NONBLOCK;
-    if (fcntl(_serverSocket, F_SETFL, flags) == -1) {
-        std::cerr << "Error setting file flags: " << strerror(errno) << std::endl;
-        close(_serverSocket);
-        return (ERROR);
-    }
     pollfd serverpollfd = { _serverSocket, POLLIN, 0 };
     clients.push_back(serverpollfd);
-    std::cout << "Server started on " << "http://" << inet_ntoa(_serverAddress.sin_addr) << ":" << _port << std::endl;
-
-    while (true) {
+    std::cout << "Server started on port: ::" << _port << std::endl;
+    while (1337) {
         int pollRes = poll(&clients[0], clients.size(), 0);
-
         if (pollRes < 0) {
             std::cerr << "Error: poll() failed" << std::endl;
             return (ERROR);
         }
-
         if (pollRes > 0) {
+            sockaddr_in clientAddress;
             if (clients[0].revents & POLLIN) {
-                sockaddr_in clientAddress;
                 socklen_t clientAddressLength = sizeof(clientAddress);
                 int clientSocket = accept(_serverSocket, (struct sockaddr*)&clientAddress, &clientAddressLength);
-
-                int flags = fcntl(clientSocket, F_GETFL, 0);
-                if (flags == -1) {
-                    std::cerr << "Error getting file flags: " << strerror(errno) << std::endl;
-                    close(clientSocket);
-                    continue;
-                }
-                flags |= O_NONBLOCK;
-                if (fcntl(clientSocket, F_SETFL, flags) == -1) {
-                    std::cerr << "Error setting file flags: " << strerror(errno) << std::endl;
-                    close(clientSocket);
-                    continue;
-                }
                 if (clientSocket < 0) {
                     std::cerr << "Error: accept() failed. continuing..." << std::endl;
                     continue;
                 }
                 pollfd clientpollfd = { clientSocket, POLLIN, 0 };
                 clients.push_back(clientpollfd);
+                std::cout << "Client connected" << std::endl;
+
             }
         }
         for (size_t i = 1; i < clients.size(); i++) {
-            int j = i - 1;
             if (clients[i].revents & POLLIN) {
-                requests.push_back(Request());
-                responses.push_back(Response());
-                responses[j].setSocket(clients[i].fd);
-                char buffer[1];
-                int recvRes = recv(responses[j].getSocket(), buffer, sizeof(buffer), MSG_PEEK);
-                if (recvRes == 0 || (recvRes < 0 && errno != EWOULDBLOCK)) {
-                    close(responses[j].getSocket());
-                    clients.erase(clients.begin() + i);
-                    requests.erase(requests.begin() + j); // Remove corresponding Request
-                    responses.erase(responses.begin() + j); // Remove corresponding Response
-                    i--; // Do not increment i in this case
-                    continue;
-                }
-                requests[j].handleRequest(responses[j].getSocket());
-                responses[j].generateResp(requests[j], mimeTypes);
-                responses[j].sendResp(responses[j].getSocket());
-                close(responses[j].getSocket());
+                std::cout << "Handling request\n";
+                requests[clients[i].fd].handleRequest(clients[i].fd);
+                responses[clients[i].fd].generateResp(requests[clients[i].fd], mimeTypes);
+                responses[clients[i].fd].sendResp(clients[i].fd);
+                // close(clients[i].fd);
+                clients.erase(clients.begin() + i);
+                requests.erase(clients[i].fd);
+                responses.erase(clients[i].fd);
+                i--;
             }
         }
-
     }
+
 }
+// int Server::start(void) {
+//     std::vector<pollfd> clients;
+//     std::map<int, time_t> keepAliveClients;
+//     std::vector<Request> requests;
+//     std::vector<Response> responses;
+//     if (listen(_serverSocket, 1024) < 0) {
+//         std::cerr << "Error: listen() failed" << std::endl;
+//         return (ERROR);
+//     }
+//     int flags = fcntl(_serverSocket, F_GETFL, 0);
+//     if (flags == -1) {
+//         std::cerr << "Error getting file flags: " << strerror(errno) << std::endl;
+//         close(_serverSocket);
+//         return (ERROR);
+//     }
+//     flags |= O_NONBLOCK;
+//     if (fcntl(_serverSocket, F_SETFL, flags) == -1) {
+//         std::cerr << "Error setting file flags: " << strerror(errno) << std::endl;
+//         close(_serverSocket);
+//         return (ERROR);
+//     }
+//     pollfd serverpollfd = { _serverSocket, POLLIN, 0 };
+//     clients.push_back(serverpollfd);
+//     std::cout << "Server started on " << "http://" << inet_ntoa(_serverAddress.sin_addr) << ":" << _port << std::endl;
+
+//     while (true) {
+//         int pollRes = poll(&clients[0], clients.size(), 10);
+
+//         if (pollRes < 0) {
+//             std::cerr << "Error: poll() failed" << std::endl;
+//             return (ERROR);
+//         }
+
+//         if (pollRes > 0) {
+//             if (clients[0].revents & POLLIN) {
+//                 sockaddr_in clientAddress;
+//                 socklen_t clientAddressLength = sizeof(clientAddress);
+//                 int clientSocket = accept(_serverSocket, (struct sockaddr*)&clientAddress, &clientAddressLength);
+
+//                 int flags = fcntl(clientSocket, F_GETFL, 0);
+//                 if (flags == -1) {
+//                     std::cerr << "Error getting file flags: " << strerror(errno) << std::endl;
+//                     close(clientSocket);
+//                     continue;
+//                 }
+//                 flags |= O_NONBLOCK;
+//                 if (fcntl(clientSocket, F_SETFL, flags) == -1) {
+//                     std::cerr << "Error setting file flags: " << strerror(errno) << std::endl;
+//                     close(clientSocket);
+//                     continue;
+//                 }
+//                 if (clientSocket < 0) {
+//                     std::cerr << "Error: accept() failed. continuing..." << std::endl;
+//                     continue;
+//                 }
+//                 pollfd clientpollfd = { clientSocket, POLLIN, 0 };
+//                 clients.push_back(clientpollfd);
+//             }
+//         }
+//         for (size_t i = 1; i < clients.size(); i++) {
+//             int j = i - 1;
+//             if (clients[i].revents & POLLIN) {
+//                 Request request;
+//                 Response response;
+//                 requests.push_back(Request());
+//                 responses.push_back(Response());
+//                 responses[j].setSocket(clients[i].fd);
+//                 requests[j].handleRequest(responses[j].getSocket());
+//                 responses[j].generateResp(requests[j], mimeTypes);
+//                 responses[j].sendResp(responses[j].getSocket());
+//                 // close(responses[j].getSocket());
+//             }
+//         }
+
+//     }
+// }

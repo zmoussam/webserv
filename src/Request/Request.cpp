@@ -139,6 +139,10 @@ int Request::handleRequest(int clientSocket) {
 		std::cerr << "Error: recv() failed" << std::endl;
 		return (-1);
 	}
+	else if (bytesRead == 0) {
+		std::cout << "Client disconnected" << std::endl;
+		return (-1);
+	}
 
 	_buffer[bytesRead] = '\0';
 	request = _buffer;
