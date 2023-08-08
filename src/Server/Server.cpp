@@ -118,24 +118,25 @@ int Server::start(void) {
             }
         }
         for (size_t i = 1; i < clients.size(); i++) {
+            int j = i - 1;
             if (clients[i].revents & POLLIN) {
                 requests.push_back(Request());
                 responses.push_back(Response());
-                responses[i - 1].setSocket(clients[i].fd);
+                responses[j].setSocket(clients[i].fd);
                 char buffer[1];
-                int recvRes = recv(responses[i - 1].getSocket(), buffer, sizeof(buffer), MSG_PEEK);
+                int recvRes = recv(responses[j].getSocket(), buffer, sizeof(buffer), MSG_PEEK);
                 if (recvRes == 0 || (recvRes < 0 && errno != EWOULDBLOCK)) {
-                    close(responses[i - 1].getSocket());
+                    close(responses[j].getSocket());
                     clients.erase(clients.begin() + i);
-                    requests.erase(requests.begin() + i - 1); // Remove corresponding Request
-                    responses.erase(responses.begin() + i - 1); // Remove corresponding Response
+                    requests.erase(requests.begin() + j); // Remove corresponding Request
+                    responses.erase(responses.begin() + j); // Remove corresponding Response
                     i--; // Do not increment i in this case
                     continue;
                 }
-                requests[i - 1].handleRequest(responses[i - 1].getSocket());
-                responses[i - 1].generateResp(requests[i - 1], mimeTypes);
-                responses[i - 1].sendResp(responses[i - 1].getSocket());
-                close(responses[i - 1].getSocket());
+                requests[j].handleRequest(responses[j].getSocket());
+                responses[j].generateResp(requests[j], mimeTypes);
+                responses[j].sendResp(responses[j].getSocket());
+                close(responses[j].getSocket());
             }
         }
 
