@@ -12,7 +12,29 @@ Request::Request()
 {
 }
 
+Request::Request(std::string &text)
+	: _method(""),
+	  _path(""),
+	  _protocol(""),
+	  _headers(),
+	  _body(""),
+	  _queries(),
+	  _cookies(),
+	  _keepAlive(1)
+{
+	parseMethod(text);
+	parseHeaders(text);
+	parseQueries(text);
+	parseCookies(text);
+	parseBody(text);
+}
+
+
 Request::~Request() {
+}
+
+void Request::setBuffer(const std::string& buffer) {
+	_buffer = buffer;
 }
 
 void Request::setMethod(const std::string& method) {

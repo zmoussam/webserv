@@ -14,17 +14,17 @@ std::map<std::string, std::string> mimeTypes = getMimeTypes();
  * @param address The server address to bind to.
  * @param port The port number to listen on.
  */
-Server::Server(std::string address, int port) {
+Server::Server(int port) {
     int reuse = 1;
     
     _port = port;
     _serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (_serverSocket < 0) {
-        std::cerr << "Error: socket() failed" << std::endl;
+        std::cerr << "Error: socket() failed" << strerror(errno) << std::endl;
         return;
     }
     _serverAddress.sin_family = AF_INET;
-    _serverAddress.sin_addr.s_addr = inet_addr(address.c_str());
+    _serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
     _serverAddress.sin_port = htons(port);
 
     if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&reuse, sizeof(reuse)) < 0) {
@@ -59,127 +59,92 @@ int Server::getPort() const {
  * Handles client requests in an infinite loop.
  */
 int Server::start(void) {
-    std::vector<pollfd> clients;
+    std::vector<int> clients;
     std::map<int, Request> requests;
     std::map<int, Response> responses;
 
     if (listen(_serverSocket, 1024) < 0) {
         std::cerr << "Error: listen() failed" << std::endl;
-        return (ERROR);
+        return ERROR;
     }
-    pollfd serverpollfd = { _serverSocket, POLLIN, 0 };
-    clients.push_back(serverpollfd);
-    std::cout << "Server started on port: ::" << _port << std::endl;
-    while (1337) {
-        int pollRes = poll(&clients[0], clients.size(), 0);
-        if (pollRes < 0) {
-            std::cerr << "Error: poll() failed" << std::endl;
-            return (ERROR);
-        }
-        if (pollRes > 0) {
-            sockaddr_in clientAddress;
-            if (clients[0].revents & POLLIN) {
-                socklen_t clientAddressLength = sizeof(clientAddress);
-                int clientSocket = accept(_serverSocket, (struct sockaddr*)&clientAddress, &clientAddressLength);
-                if (clientSocket < 0) {
-                    std::cerr << "Error: accept() failed. continuing..." << std::endl;
-                    continue;
-                }
-                pollfd clientpollfd = { clientSocket, POLLIN, 0 };
-                clients.push_back(clientpollfd);
-                std::cout << "Client connected" << std::endl;
 
-            }
+    fd_set masterSet;
+    FD_ZERO(&masterSet);
+    FD_SET(_serverSocket, &masterSet);
+    int maxFd = _serverSocket;
+
+    std::cout << "Server started on port: " << _port << std::endl;
+
+    std::string full_text = "";
+    int readyToServe = 0;
+    Request req;
+    int res = 0;
+    while (true) {
+        fd_set readSet = masterSet;
+        fd_set writeSet = masterSet;
+        int selectRes = select(maxFd + 1, &readSet, &writeSet, NULL, NULL);
+
+        if (selectRes < 0) {
+            std::cerr << "Error: select() failed" << std::endl;
+            return ERROR;
         }
-        for (size_t i = 1; i < clients.size(); i++) {
-            if (clients[i].revents & POLLIN) {
-                std::cout << "Handling request\n";
-                requests[clients[i].fd].handleRequest(clients[i].fd);
-                responses[clients[i].fd].generateResp(requests[clients[i].fd], mimeTypes);
-                responses[clients[i].fd].sendResp(clients[i].fd);
-                // close(clients[i].fd);
+
+        // if client is ready to be read from accept the connection
+        if (FD_ISSET(_serverSocket, &readSet)) {
+            int clientSocket = accept(_serverSocket, NULL, NULL);
+            if (clientSocket < 0) {
+                std::cerr << "Error: accept() failed" << std::endl;
+                continue;
+            }
+            std::cout << "New client connected with socket: " << clientSocket << std::endl;
+            clients.push_back(clientSocket);
+            FD_SET(clientSocket, &masterSet);
+            if (clientSocket > maxFd) {
+                maxFd = clientSocket;
+            }
+            responses[clientSocket] = Response(clientSocket);
+        }
+        // iterate through the clients and just print the request
+        for (size_t i = 0; i < clients.size(); i++) {
+            int clientSocket = clients[i];
+            if (full_text.find("\r\n\r\n") != std::string::npos && !readyToServe) {
+                req.setBuffer(full_text);
+                req.parseMethod(full_text);
+                req.parseHeaders(full_text);
+                req.parseQueries(full_text);
+                req.parseCookies(full_text);
+
+                std::cout << " - - " << "\"" << req.getMethod() << " " << req.getPath() << " " << req.getProtocol() << "\" "  << std::endl;
+                std::cout << readyToServe << std::endl;
+                std::cout << "Found end of request" << std::endl;
+                std::cout << "Method: " << req.getMethod() << std::endl;
+                readyToServe = 1;
+            }
+            if (FD_ISSET(clientSocket, &readSet) && !readyToServe) {
+                char buffer[1];
+                int readRes = recv(clientSocket, buffer, sizeof(buffer), 0);
+                if (readRes < 0) {
+                    std::cerr << "Error: recv() failed" << std::endl;
+                    return ERROR;
+
+                }
+                buffer[readRes] = '\0';
+                std::cout << "Received from client: " << buffer << std::endl;
+                full_text += buffer;
+            }
+            
+            if (FD_ISSET(clientSocket, &writeSet) && readyToServe) {
+                res = responses[clientSocket].sendResp(req);
+            }
+            if (res == DONE && readyToServe) {
+                close(clientSocket);
+                FD_CLR(clientSocket, &masterSet);
                 clients.erase(clients.begin() + i);
-                requests.erase(clients[i].fd);
-                responses.erase(clients[i].fd);
+                responses.erase(clientSocket);
+                full_text.clear();
+                readyToServe = 0;
                 i--;
             }
         }
     }
-
 }
-// int Server::start(void) {
-//     std::vector<pollfd> clients;
-//     std::map<int, time_t> keepAliveClients;
-//     std::vector<Request> requests;
-//     std::vector<Response> responses;
-//     if (listen(_serverSocket, 1024) < 0) {
-//         std::cerr << "Error: listen() failed" << std::endl;
-//         return (ERROR);
-//     }
-//     int flags = fcntl(_serverSocket, F_GETFL, 0);
-//     if (flags == -1) {
-//         std::cerr << "Error getting file flags: " << strerror(errno) << std::endl;
-//         close(_serverSocket);
-//         return (ERROR);
-//     }
-//     flags |= O_NONBLOCK;
-//     if (fcntl(_serverSocket, F_SETFL, flags) == -1) {
-//         std::cerr << "Error setting file flags: " << strerror(errno) << std::endl;
-//         close(_serverSocket);
-//         return (ERROR);
-//     }
-//     pollfd serverpollfd = { _serverSocket, POLLIN, 0 };
-//     clients.push_back(serverpollfd);
-//     std::cout << "Server started on " << "http://" << inet_ntoa(_serverAddress.sin_addr) << ":" << _port << std::endl;
-
-//     while (true) {
-//         int pollRes = poll(&clients[0], clients.size(), 10);
-
-//         if (pollRes < 0) {
-//             std::cerr << "Error: poll() failed" << std::endl;
-//             return (ERROR);
-//         }
-
-//         if (pollRes > 0) {
-//             if (clients[0].revents & POLLIN) {
-//                 sockaddr_in clientAddress;
-//                 socklen_t clientAddressLength = sizeof(clientAddress);
-//                 int clientSocket = accept(_serverSocket, (struct sockaddr*)&clientAddress, &clientAddressLength);
-
-//                 int flags = fcntl(clientSocket, F_GETFL, 0);
-//                 if (flags == -1) {
-//                     std::cerr << "Error getting file flags: " << strerror(errno) << std::endl;
-//                     close(clientSocket);
-//                     continue;
-//                 }
-//                 flags |= O_NONBLOCK;
-//                 if (fcntl(clientSocket, F_SETFL, flags) == -1) {
-//                     std::cerr << "Error setting file flags: " << strerror(errno) << std::endl;
-//                     close(clientSocket);
-//                     continue;
-//                 }
-//                 if (clientSocket < 0) {
-//                     std::cerr << "Error: accept() failed. continuing..." << std::endl;
-//                     continue;
-//                 }
-//                 pollfd clientpollfd = { clientSocket, POLLIN, 0 };
-//                 clients.push_back(clientpollfd);
-//             }
-//         }
-//         for (size_t i = 1; i < clients.size(); i++) {
-//             int j = i - 1;
-//             if (clients[i].revents & POLLIN) {
-//                 Request request;
-//                 Response response;
-//                 requests.push_back(Request());
-//                 responses.push_back(Response());
-//                 responses[j].setSocket(clients[i].fd);
-//                 requests[j].handleRequest(responses[j].getSocket());
-//                 responses[j].generateResp(requests[j], mimeTypes);
-//                 responses[j].sendResp(responses[j].getSocket());
-//                 // close(responses[j].getSocket());
-//             }
-//         }
-
-//     }
-// }

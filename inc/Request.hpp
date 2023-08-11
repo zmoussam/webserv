@@ -48,6 +48,8 @@ class Request {
 		Request();
 		~Request();
 
+		Request(std::string &text);
+
 		void setMethod(const std::string& method);
 		void setPath(const std::string& path);
 		void setProtocol(const std::string& protocol);
@@ -55,6 +57,7 @@ class Request {
 		void setBody(const std::string& body);
 		void setQuery(const std::string& key, const std::string& value);
 		void setCookie(const std::string& key, const std::string& value);
+		void setBuffer(const std::string& buffer);
 
 
 		const std::string& getMethod() const;
@@ -71,11 +74,12 @@ class Request {
 		void parseHeaders(const std::string& request);
 		void parseQueries(const std::string& request);
 		void parseCookies(const std::string& request);
+		int recvRequest(int clientSocket);
 		void clear(void);
 	private:
-		char _buffer[BUFSIZE + 1];
-		std::string _method; // POST, GET, PUT, DELETE, etc.
 		int			_clientSocket;
+		std::string _buffer;
+		std::string _method; // POST, GET, PUT, DELETE, etc.
 		std::string _path; // /index.html or /users/1
 		std::string _protocol; // HTTP/1.1
 		std::map<std::string, std::string> _headers; // Headers are used to send additional information to the server
@@ -83,6 +87,9 @@ class Request {
 		std::map<std::string, std::string> _queries; // Queries are used to send additional information to the server (GET) https://example.com?query=1&query=2 etc
 		std::map<std::string, std::string> _cookies; // Cookies are used to store information about the user (session, etc.)
 		int _keepAlive;
+		bool _isHeadersRead;
+		bool _isBodyRead;
+		bool _isParsed;
 };
 
 

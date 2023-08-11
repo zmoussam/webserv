@@ -5,8 +5,10 @@
 #define SUCCESS 0
 #define TRUE 1
 #define FALSE 0
+#define DONE 2
+#define CONTINUE 3
 #define BUFSIZE 1024
-
+#define ROOT_PATH "./www"
 
 enum HttpStatusCode {
     OK = 200,

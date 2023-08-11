@@ -18,7 +18,7 @@ class Server {
 		struct sockaddr_in _serverAddress;
 	
 	public:
-		Server(std::string address, int port);
+		Server(int port);
 		~Server();
 
 		void setPort(int port);

@@ -3,6 +3,7 @@
 std::map<std::string, std::string> getMimeTypes(void)
 {
     std::map<std::string, std::string> mimeTypes;
+
     mimeTypes[".323"] = "text/h323";
     mimeTypes[".3g2"] = "video/3gpp2";
     mimeTypes[".3gp"] = "video/3gpp";
