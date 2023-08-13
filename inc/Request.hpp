@@ -6,7 +6,7 @@
 /*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/13 19:07:37 by aarbaoui         ###   ########.fr       */
+/*   Updated: 2023/08/13 20:02:48 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,10 @@
 #include <iostream>
 #include <string>
 #include <map>
-#define BUFFER_SIZE 3000
-
+#include <sys/socket.h>
+#include <sstream>
+#include "Macros.hpp"
+#include "Utils.hpp"
 class Request
 {
     private:

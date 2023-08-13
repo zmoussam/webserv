@@ -117,7 +117,6 @@ int Server::start(void) {
                     i--;
                     req = 0;
                 }
-                std::cout << requests[clientSocket].getPath() << std::endl;
             }
             
             if (FD_ISSET(clientSocket, &writeSet) && requests[clientSocket].isHeadersRead()) {

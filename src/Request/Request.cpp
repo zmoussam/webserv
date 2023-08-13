@@ -6,14 +6,12 @@
 /*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/13 19:19:55 by aarbaoui         ###   ########.fr       */
+/*   Updated: 2023/08/13 20:05:55 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
-#include "Macros.hpp"
-#include <sys/socket.h>
-#include <sstream>
+
 
 int Request::recvRequest() {
 	char buffer[1024];
@@ -47,10 +45,9 @@ int Request::handleRequest() {
 	}
 
 		if (rcvRes == DONE && _isHeadersRead) {
-            std::cout << "hhhhh" << std::endl; 
 			parsseRequest();
 		}
-	// std::cout << " - - " << "\"" << _method << " " << _path << " " << _protocol << "\" "  << std::endl;
+	std::cout << " - "<< getFormattedTime() << " - " << "\"" << _method << " " << _URI << " " << _httpVersion << "\"" << std::endl;
 	return (0);
 }
 
@@ -139,7 +136,6 @@ void Request::parssePath_Queries(size_t &URI_Pos)
     if (queryPos != std::string::npos)
     {
         _URI = URI.substr(0, queryPos);
-        std::cout << _URI << std::endl;
         _queries = URI.substr(queryPos + 1);
     }
     else {
