@@ -74,7 +74,7 @@ int Server::start(void) {
     int maxFd = _serverSocket;
 
     std::cout << "Server started on port: " << _port << std::endl;
-
+    int req = 0;
     int res = 0;
     while (true) {
         fd_set readSet = masterSet;
@@ -99,7 +99,7 @@ int Server::start(void) {
             if (clientSocket > maxFd) {
                 maxFd = clientSocket;
             }
-            requests[clientSocket] = Request();
+            requests[clientSocket] = Request(clientSocket);
             responses[clientSocket] = Response(clientSocket);
         }
         // iterate through the clients and just print the request
@@ -107,7 +107,16 @@ int Server::start(void) {
             int clientSocket = clients[i];
 
             if (FD_ISSET(clientSocket, &readSet)) {
-                requests[clientSocket].handleRequest(clientSocket);        
+                req = requests[clientSocket].handleRequest();        
+                if (req == DISCONNECTED) {
+                    close(clientSocket);
+                    FD_CLR(clientSocket, &masterSet);
+                    clients.erase(clients.begin() + i);
+                    responses.erase(clientSocket);
+                    requests.erase(clientSocket);
+                    i--;
+                    req = 0;
+                }
             }
             
             if (FD_ISSET(clientSocket, &writeSet) && requests[clientSocket].isHeadersRead()) {

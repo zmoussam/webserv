@@ -1,141 +1,56 @@
-# include "Request.hpp"
+#include "Request.hpp"
 
-Request::Request()
-	: _method(""),
-	  _path(""),
-	  _protocol(""),
-	  _headers(),
-	  _body(""),
-	  _queries(),
-	  _cookies(),
-	  _keepAlive(1),
-	  _isHeadersRead(false)
+
+std::string Request::getFullRequest() const
 {
+    return this->_request;
 }
 
-Request::Request(std::string &text)
-	: _method(""),
-	  _path(""),
-	  _protocol(""),
-	  _headers(),
-	  _body(""),
-	  _queries(),
-	  _cookies(),
-	  _keepAlive(1)
+size_t Request::getRequestLength() const
 {
-	parseMethod(text);
-	parseHeaders(text);
-	parseQueries(text);
-	parseCookies(text);
-	parseBody(text);
+    return this->_requestLength;
 }
 
-
-Request::~Request() {
+std::string Request::getBody() const
+{
+    return this->_body;
 }
 
-void Request::setBuffer(const std::string& buffer) {
-	_buffer = buffer;
+std::string Request::getHTTPVersion() const
+{
+    return this->_httpVersion;
 }
 
-void Request::setMethod(const std::string& method) {
-	_method = method;
+std::string Request::getPath() const
+{
+    return this->_URI;
 }
 
-void Request::setPath(const std::string& path) {
-	_path = path;
+std::string Request::getMethod() const
+{
+    return this->_method;
 }
 
-void Request::setProtocol(const std::string& protocol) {
-	_protocol = protocol;
+std::string Request::getQueries() const
+{
+    return this->_queries;
 }
 
-void Request::setBody(const std::string& body) {
-	_body = body;
+bool Request::KeepAlive() const
+{
+    return this->_keepAlive;
 }
 
-void Request::setHeader(const std::string& key, const std::string& value) {
-	_headers[key] = value;
+std::map<std::string, std::string> Request::getHeaders() const
+{
+    return this->_headers;
 }
 
-void Request::setQuery(const std::string& key, const std::string& value) {
-	_queries[key] = value;
+std::map<std::string, std::string> Request::getCookies() const
+{
+    return this->_cookies;
 }
 
-void Request::setCookie(const std::string& key, const std::string& value) {
-	_cookies[key] = value;
-}
-
-
-const std::string& Request::getMethod() const {
-	return _method;
-}
-
-const std::string& Request::getPath() const {
-	return _path;
-}
-
-const std::string& Request::getProtocol() const {
-	return _protocol;
-}
-
-const std::string& Request::getBody() const {
-	return _body;
-}
-
-const std::string& Request::getHeader(const std::string& key) const {
-	return _headers.at(key);
-}
-
-const std::string& Request::getQuery(const std::string& key) const {
-	return _queries.at(key);
-}
-
-const std::string& Request::getCookie(const std::string& key) const {
-	return _cookies.at(key);
-}
-int Request::isHeadersRead() const {
+bool Request::isHeadersRead() const {
 	return _isHeadersRead;
-}
-
-
-// Get the first line of the request
-std::string getFirstLine(const std::string& request) {
-	std::string firstLine;
-	size_t pos = request.find("\r\n");
-	if (pos != std::string::npos)
-		firstLine = request.substr(0, pos);
-	return firstLine;
-}
-
-// Split a line by space delimiter and return the token at the specified index
-std::string splitLine(const std::string& line, int idx) {
-    std::string result;
-    std::istringstream iss(line);
-
-    for (int i = 0; i <= idx; i++) {
-        std::string token;
-        if (std::getline(iss, token, ' ')) {
-            result = token;
-        } else {
-            result.clear();
-            break;
-        }
-    }
-    return result;
-}
-
-
-// Get the headers section of the request
-std::string getHeaders(const std::string& request) {
-	if (request.find("\r\n") == std::string::npos)
-		return "";
-	std::string headers = request.substr(request.find("\r\n") + 2);
-	headers = headers.substr(0, headers.find("\r\n\r\n"));
-	return headers;
-}
-
-
-int Request::keepAlive(void) const {
-	return _keepAlive;
 }

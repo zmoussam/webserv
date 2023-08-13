@@ -1,101 +1,60 @@
-#pragma once
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Request.hpp                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
+/*   Updated: 2023/08/13 18:57:37 by zmoussam         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-# include <iostream>
-# include <cstring>
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <arpa/inet.h>
-# include <unistd.h>
-# include <map>
-# include <sstream>
-# include <vector>
-# include <poll.h>
-#include "Macros.hpp"
-// Request class is used to store information about the request
-// For example, if the client sends a request to the server:
-
-// GET /index.html HTTP/1.1
-// Host: example.com
-// User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0
-// Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
-// Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3
-// Accept-Encoding: gzip, deflate, br
-// Connection: keep-alive
-// Upgrade-Insecure-Requests: 1
-// If-Modified-Since: Thu, 11 Feb 2021 16:00:00 GMT
-
-// Then the Request class will store this information:
-// _method = GET
-// _path = /index.html
-// _protocol = HTTP/1.1
-// _headers = {
-// 	Host: example.com
-// 	User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0
-// 	Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
-// 	Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3
-// 	Accept-Encoding: gzip, deflate, br
-// 	Connection: keep-alive
-// 	Upgrade-Insecure-Requests: 1
-// 	If-Modified-Since: Thu, 11 Feb 2021 16:00:00 GMT
-// }
-// _body = ""
-// _queries = {}
-// _cookies = {}
-
-
-class Request {
-	public:
-		Request();
-		~Request();
-
-		Request(std::string &text);
-
-		void setMethod(const std::string& method);
-		void setPath(const std::string& path);
-		void setProtocol(const std::string& protocol);
-		void setHeader(const std::string& key, const std::string& value);
-		void setBody(const std::string& body);
-		void setQuery(const std::string& key, const std::string& value);
-		void setCookie(const std::string& key, const std::string& value);
-		void setBuffer(const std::string& buffer);
-
-
-		const std::string& getMethod() const;
-		const std::string& getPath() const;
-		const std::string& getProtocol() const;
-		const std::string& getHeader(const std::string& key) const;
-		const std::string& getBody() const;
-		const std::string& getQuery(const std::string& key) const;
-		const std::string& getCookie(const std::string& key) const;
-		const std::string& getBuffer() const;
-		int isHeadersRead() const;
-		int keepAlive(void) const;
-		int handleRequest(int clientSocket);
-		void parseBody(const std::string& request);
-		void parseMethod(const std::string& request);
-		void parseHeaders(const std::string& request);
-		void parseQueries(const std::string& request);
-		void parseCookies(const std::string& request);
-		int recvRequest(int clientSocket);
-		void clear(void);
-	private:
-		int			_clientSocket;
-		std::string _buffer;
-		std::string _method; // POST, GET, PUT, DELETE, etc.
-		std::string _path; // /index.html or /users/1
-		std::string _protocol; // HTTP/1.1
-		std::map<std::string, std::string> _headers; // Headers are used to send additional information to the server
-		std::string _body; // Request body (POST, PUT, etc.) usually JSON format and used to send data to the server
-		std::map<std::string, std::string> _queries; // Queries are used to send additional information to the server (GET) https://example.com?query=1&query=2 etc
-		std::map<std::string, std::string> _cookies; // Cookies are used to store information about the user (session, etc.)
-		int _keepAlive;
-		bool _isHeadersRead;
-		bool _isBodyRead;
-		bool _isParsed;
-};
-
-
-std::string	getFirstLine(const std::string& request);
-std::string splitLine(const std::string& line, int idx);
-std::string getHeaders(const std::string& request);
-
+#ifndef  REQUEST__
+#define REQUEST__
+#include <iostream>
+#include <string>
+#include <map>
+#define BUFFER_SIZE 3000
+    class Request
+    {
+        private:
+            int _clientSocket;
+            std::string _request;
+            size_t _requestLength;
+            std::string _httpVersion;
+            std::string _body;
+            std::string _URI;
+            std::string _method;
+            std::string _queries;
+            std::map<std::string, std::string> _headers;
+            std::map<std::string , std::string> _cookies;
+            bool _keepAlive;
+			bool _isHeadersRead;
+        public:
+			int recvRequest();
+			int handleRequest();
+			bool isHeadersRead() const;
+            std::string getFullRequest() const;
+            size_t getRequestLength() const;
+            std::string getBody() const;
+            std::string getHTTPVersion() const;
+            std::string getPath() const;
+            std::string getMethod() const;
+            std::string getQueries() const;
+            bool KeepAlive() const;
+            std::map<std::string, std::string> getHeaders() const;
+            std::map<std::string, std::string> getCookies() const;
+            void readRequest(int client_socket);
+            void parsseRequest();
+            void parsseMethod(size_t &methodPos);
+            void parssePath_Queries(size_t &URI_Pos);
+            void parsseHTTPversion(size_t &httpVersion_pos);
+            void parsseHeaders(size_t &header_pos);
+            void parsseBody(size_t &bodyPos);
+            void parsseCookies();
+            Request(int client_socket);
+            ~Request();
+    };
+    
+#endif

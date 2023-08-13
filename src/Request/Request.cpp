@@ -1,138 +1,23 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Request.cpp                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
+/*   Updated: 2023/08/13 18:55:05 by zmoussam         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Request.hpp"
+#include "Macros.hpp"
+#include <sys/socket.h>
+#include <sstream>
 
-// Parse Content Body
-void Request::parseBody(const std::string& request) {
-    std::string body;
-    std::string::size_type pos = request.find("\r\n\r\n");
-    if (pos != std::string::npos) {
-        body = request.substr(pos + 4);
-    }
-    if (body.empty()) {
-        return;
-    }
-
-    // Remove the "Transfer-Encoding: chunked" footer, if present
-    std::string::size_type footerPos = body.find("\r\n0\r\n");
-    if (footerPos != std::string::npos) {
-        body = body.substr(0, footerPos);
-    }
-
-    _body = body;
-}
-
-// Parse the "Cookie" header from the request and extract key-value pairs into _cookies map
-void Request::parseCookies(const std::string& request) {
-	// Extract headers from the request
-	std::string headers = getHeaders(request);
-	if (headers.empty()) {
-		return;
-	}
-
-	// Find the "Cookie" header and extract the cookies string
-	std::string cookies;
-	size_t startPos = headers.find("Cookie: ");
-	if (startPos != std::string::npos) {
-		startPos += 8; // Move past "Cookie: "
-		size_t endPos = headers.find("\r\n", startPos);
-		if (endPos != std::string::npos) {
-			cookies = headers.substr(startPos, endPos - startPos);
-		} else {
-			cookies = headers.substr(startPos);
-		}
-	}
-
-	std::string::size_type pos;
-	// Split cookies by "; " delimiter and extract key-value pairs
-	while ((pos = cookies.find("; ")) != std::string::npos) {
-		std::string cookie = cookies.substr(0, pos);
-		cookies.erase(0, pos + 2);
-		std::string::size_type equalsPos = cookie.find("=");
-		if (equalsPos != std::string::npos) {
-			std::string key = cookie.substr(0, equalsPos);
-			std::string value = cookie.substr(equalsPos + 1);
-			_cookies[key] = value;
-		}
-	}
-
-	// Handle the last cookie in the string
-	std::string::size_type equalsPos = cookies.find("=");
-	if (equalsPos != std::string::npos) {
-		std::string key = cookies.substr(0, equalsPos);
-		std::string value = cookies.substr(equalsPos + 1);
-		_cookies[key] = value;
-	}
-}
-
-// Parse the query parameters from the request URL and extract key-value pairs into _queries map
-void Request::parseQueries(const std::string& request) {
-	std::string line = getFirstLine(request);
-	std::string queries = splitLine(line, 1);
-	std::string::size_type pos = queries.find("?");
-	if (pos == std::string::npos) {
-		return;
-	}
-	queries.erase(0, pos + 1);
-	std::string query;
-	std::string key;
-	std::string value;
-
-	// Split queries by "&" delimiter and extract key-value pairs
-	while ((pos = queries.find("&")) != std::string::npos) {
-		query = queries.substr(0, pos);
-		queries.erase(0, pos + 1);
-		key = query.substr(0, query.find("="));
-		value = query.substr(query.find("=") + 1);
-		_queries[key] = value;
-	}
-
-	// Handle the last query parameter in the string
-	key = queries.substr(0, queries.find("="));
-	value = queries.substr(queries.find("=") + 1);
-	_queries[key] = value;
-}
-
-// Parse the headers from the request and extract key-value pairs into _headers map
-void Request::parseHeaders(const std::string& request) {
-	std::string headers = getHeaders(request);
-	if (headers.empty()) {
-		return;
-	}
-
-	std::string header;
-	std::string key;
-	std::string value;
-	std::string::size_type pos;
-	// Split headers by "\r\n" delimiter and extract key-value pairs
-	while ((pos = headers.find("\r\n")) != std::string::npos) {
-		header = headers.substr(0, pos);
-		headers.erase(0, pos + 2);
-		key = header.substr(0, header.find(": "));
-		value = header.substr(header.find(": ") + 2);
-		if (key == "Connection") {
-			if (value == "close") {
-				_keepAlive = 0;
-			}
-		}
-		if (key == "Cookie") {
-			continue;
-		}
-		_headers[key] = value;
-	}
-}
-
-// Parse the method, path, and protocol from the first line of the request
-void Request::parseMethod(const std::string& request) {
-	std::string firstLine = getFirstLine(request);
-
-	_method = splitLine(firstLine, 0);
-	_path = splitLine(firstLine, 1);
-	_protocol = splitLine(firstLine, 2);
-}
-
-
-int Request::recvRequest(int clientSocket) {
+int Request::recvRequest() {
 	char buffer[1024];
-	int readRes = recv(clientSocket, buffer, sizeof(buffer), 0);
+	int readRes = recv(_clientSocket, buffer, sizeof(buffer), 0);
 	if (readRes == -1) {
 		std::cerr << "Error: recv() failed" << std::endl;
 		return DONE;
@@ -142,8 +27,8 @@ int Request::recvRequest(int clientSocket) {
 		return DISCONNECTED;
 	}
 	buffer[readRes] = '\0';
-	_buffer += buffer;
-	if (_buffer.find("\r\n\r\n") != std::string::npos && !_isHeadersRead) {
+	_request += buffer;
+	if (_request.find("\r\n\r\n") != std::string::npos && !_isHeadersRead) {
 		_isHeadersRead = 1;
 		return DONE;
 	}
@@ -151,27 +36,164 @@ int Request::recvRequest(int clientSocket) {
 }
 
 // Handle the request received on the provided client socket
-int Request::handleRequest(int clientSocket) {
+int Request::handleRequest() {
 	// Receive the request from the client
-	int rcvRes = recvRequest(clientSocket);
+	int rcvRes = recvRequest();
 	if (rcvRes == DISCONNECTED) {
 		return DISCONNECTED;
 	}
 
 		if (rcvRes == DONE && _isHeadersRead) {
-			parseMethod(_buffer);
-			parseHeaders(_buffer);
-			parseQueries(_buffer);
-			parseCookies(_buffer);
-			// parseBody(_buffer);
+			parsseRequest();
 		}
-	std::cout << " - - " << "\"" << _method << " " << _path << " " << _protocol << "\" "  << std::endl;
+	// std::cout << " - - " << "\"" << _method << " " << _path << " " << _protocol << "\" "  << std::endl;
 	return (0);
 }
 
-// Clear the internal data structures of the Request object
-void Request::clear(void) {
-	_headers.clear();
-	_queries.clear();
-	_cookies.clear();
+Request::Request(int clientSocket) 	: 
+	_request(""),
+    _requestLength(0),
+    _httpVersion(""),
+	_body(""),
+	_URI(""),
+    _method(""),
+	_queries(),
+	_headers(),
+	_cookies(),
+	_keepAlive(1),
+	_isHeadersRead(false)
+{
+    readRequest(clientSocket); 
+}
+
+// void Request::readRequest(int client_socket)
+// {
+//     char buffer[11];
+//     int rd = 1;
+    
+//     while (rd != 0)
+//     {
+//         memset(buffer, 0, 11);
+//         rd = recv(client_socket, buffer, 10, 0);
+//         if (rd < 0)
+//         {
+//             std::cout << "Error : recieve request failed \n" << strerror(errno) << std::endl;
+//             return;
+//         }
+//         buffer[rd] = '\0';
+//         _request += std::string(buffer);
+//         if (_request.find("\r\n\r\n") != std::string::npos)
+//             break;
+//     }
+    
+//     _requestLength = _request.size();
+//     // std::cout << _request << std::endl;
+// }
+
+void Request::parsseRequest()
+{
+    size_t nextPos = 0;
+    parsseMethod(nextPos);
+    parssePath_Queries(nextPos);
+    parsseHTTPversion(nextPos);
+    parsseHeaders(nextPos);
+    parsseBody(nextPos);
+    parsseCookies();
+
+}
+
+void Request::parsseMethod(size_t &methodPos)
+{
+    for (; methodPos < _requestLength && _request[methodPos] != ' '; methodPos++)
+        _method += _request[methodPos];
+}
+
+void Request::parssePath_Queries(size_t &URI_Pos)
+{
+    std::string URI = "";
+    size_t queryPos;
+    for (; URI_Pos < _requestLength && _request[URI_Pos] == ' '; URI_Pos++);
+    for (; URI_Pos < _requestLength && _request[URI_Pos] != ' '; URI_Pos++)
+        URI += _request[URI_Pos];
+    queryPos = URI.find('?');
+    if (queryPos != std::string::npos)
+    {
+        _URI = URI.substr(0, queryPos);
+        _queries = URI.substr(queryPos + 1);
+    }
+    else {
+        _URI = URI;
+    }
+}
+
+void Request::parsseHTTPversion(size_t &_httpversion_Pos)
+{
+    for (; _httpversion_Pos < _requestLength && _request[_httpversion_Pos] == ' '; _httpversion_Pos++);
+    for (; _httpversion_Pos < _requestLength && _request[_httpversion_Pos] != ' ' \
+       && _request[_httpversion_Pos] != '\r'; _httpversion_Pos++)
+        _httpVersion += _request[_httpversion_Pos];
+}
+
+void Request::parsseHeaders(size_t &_hpos)
+{
+    std::string _key;
+    size_t _headerkeyPos;
+    size_t _headerValuePos;
+    _keepAlive = false;
+    size_t bodypos = _request.find("\r\n\r\n", _hpos);
+    if (bodypos == std::string::npos)
+        return;
+    while (_hpos < bodypos)
+    {
+        _headerkeyPos = _request.find(':', _hpos);
+        if (_headerkeyPos == std::string::npos)
+            break;
+        _key = _request.substr(_hpos + 2, _headerkeyPos - _hpos - 2);
+        if ((_headerValuePos = _request.find("\r\n", _headerkeyPos)) == std::string::npos)
+            return;
+        _headers[_key] = _request.substr(_headerkeyPos + 2, _headerValuePos - _headerkeyPos - 2);
+        if (_key == "Connection" && _headers[_key] == "keep-alive")
+            _keepAlive = true;
+        _hpos = _headerValuePos;
+        // std::cout << '$' << _key << "$ : " << '$' << this->_headers[_key]  << "$" << std::endl;
+    }
+}
+
+void Request::parsseCookies()
+{
+    std::string _key;
+    std::string _value;
+    std::string Cookies;
+    if (_headers.find("Cookie") != _headers.end() || _headers.find("Cookies") != _headers.end()) {
+        if (_headers.find("Cookie") != _headers.end()) { Cookies = _headers["Cookie"]; }
+        else { Cookies = _headers["Cookies"]; }
+        size_t CookiesLength = Cookies.size();
+        for (size_t i = 0; i < CookiesLength; i++) {
+            _key = "" , _value = "";
+            for (; i < CookiesLength && Cookies[i] != '='; i++)
+                if (Cookies[i] != ' ')
+                    _key +=  Cookies[i];
+            i++;
+            for (; i < CookiesLength && Cookies[i] != ';'; i++)
+                if (Cookies[i] != ' ')
+                    _value += Cookies[i];
+            _cookies[_key] = _value;
+        }
+        _headers.erase("Cookie");
+        _headers.erase("Cookies");
+    }
+}
+
+void Request::parsseBody(size_t &_bodyPos)
+{
+    if (_headers.find("Content-Length") != _headers.end())
+        _body = _request.substr(_bodyPos + 4 , std::atoi(_headers["Content-Length"].c_str()));
+    std::cout <<  _body << std::endl;
+}
+
+Request::~Request()
+{
+    _headers.clear();
+    _queries.clear();
+    _cookies.clear();
 }
