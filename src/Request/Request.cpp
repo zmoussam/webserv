@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/13 18:55:05 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/08/13 19:19:55 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,8 +28,11 @@ int Request::recvRequest() {
 	}
 	buffer[readRes] = '\0';
 	_request += buffer;
+    // std::cout << buffer << std::endl;
+    // std::cout << _request << std::endl;
 	if (_request.find("\r\n\r\n") != std::string::npos && !_isHeadersRead) {
 		_isHeadersRead = 1;
+        _requestLength = _request.size();
 		return DONE;
 	}
 	return (0);
@@ -44,6 +47,7 @@ int Request::handleRequest() {
 	}
 
 		if (rcvRes == DONE && _isHeadersRead) {
+            std::cout << "hhhhh" << std::endl; 
 			parsseRequest();
 		}
 	// std::cout << " - - " << "\"" << _method << " " << _path << " " << _protocol << "\" "  << std::endl;
@@ -61,9 +65,25 @@ Request::Request(int clientSocket) 	:
 	_headers(),
 	_cookies(),
 	_keepAlive(1),
-	_isHeadersRead(false)
+	_isHeadersRead(false),
+    _clientSocket(clientSocket)
 {
-    readRequest(clientSocket); 
+}
+
+Request::Request() :
+    _request(""),
+    _requestLength(0),
+    _httpVersion(""),
+    _body(""),
+    _URI(""),
+    _method(""),
+    _queries(),
+    _headers(),
+    _cookies(),
+    _keepAlive(1),
+    _isHeadersRead(false),
+    _clientSocket(-1)
+{
 }
 
 // void Request::readRequest(int client_socket)
@@ -119,6 +139,7 @@ void Request::parssePath_Queries(size_t &URI_Pos)
     if (queryPos != std::string::npos)
     {
         _URI = URI.substr(0, queryPos);
+        std::cout << _URI << std::endl;
         _queries = URI.substr(queryPos + 1);
     }
     else {

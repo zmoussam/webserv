@@ -7,6 +7,8 @@
 # include <fstream>
 # include <sstream>
 #include <fcntl.h>
+#include <unistd.h>
+#include <cstdio>
 
 # include "Request.hpp"
 #include "Macros.hpp"

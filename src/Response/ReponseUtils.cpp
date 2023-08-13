@@ -6,11 +6,6 @@ std::string constructFilePath(const std::string& requestPath) {
     if (pathWithoutQuery.empty() || pathWithoutQuery[0] != '/') {
         throw std::invalid_argument("Invalid request path");
     }
-
-
-    std::size_t queryPos = pathWithoutQuery.find('?');
-    pathWithoutQuery = (queryPos != std::string::npos) ? pathWithoutQuery.substr(0, queryPos) : pathWithoutQuery;
-
     if (pathWithoutQuery.back() == '/') {
         pathWithoutQuery += "index.html";
     }
