@@ -644,3 +644,17 @@ std::map<std::string, std::string> getMimeTypes(void)
 
     return mimeTypes;
 }
+
+std::string getFormattedTime(void)
+{
+    time_t rawtime;
+    struct tm *timeinfo;
+
+    time(&rawtime);
+    timeinfo = gmtime(&rawtime);
+
+    char formattedTime[30];
+    strftime(formattedTime, sizeof(formattedTime), "%a, %d %b %Y %H:%M:%S GMT", timeinfo);
+
+    return std::string(formattedTime);
+}

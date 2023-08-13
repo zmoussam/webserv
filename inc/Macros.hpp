@@ -8,6 +8,7 @@
 #define FALSE 0
 #define DONE 2
 #define CONTINUE 3
+#define DISCONNECTED 4
 #define BUFSIZE 1024
 #define ROOT_PATH "./www"
 # include <string>

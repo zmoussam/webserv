@@ -18,6 +18,7 @@ class Response
 
 		~Response();
 		void    InitFile(Request &req);
+		void    InitHeaders(Request &req);
 		int	sendResp(Request &req);
 
 		void 	setSocket(int clientSocket) { _clientSocket = clientSocket; }

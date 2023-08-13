@@ -4,4 +4,8 @@
 #include <map>
 #include <string>
 
-std::map<std::string, std::string> getMimeTypes(void);
+#include <ctime>
+#include <sstream>
+
+std::map<std::string, std::string>	getMimeTypes(void);
+std::string							getFormattedTime(void);

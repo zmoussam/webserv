@@ -129,20 +129,42 @@ void Request::parseMethod(const std::string& request) {
 	_protocol = splitLine(firstLine, 2);
 }
 
+
+int Request::recvRequest(int clientSocket) {
+	char buffer[1024];
+	int readRes = recv(clientSocket, buffer, sizeof(buffer), 0);
+	if (readRes == -1) {
+		std::cerr << "Error: recv() failed" << std::endl;
+		return DONE;
+	}
+	else if (readRes == 0) {
+		std::cout << "Client disconnected" << std::endl;
+		return DISCONNECTED;
+	}
+	buffer[readRes] = '\0';
+	_buffer += buffer;
+	if (_buffer.find("\r\n\r\n") != std::string::npos && !_isHeadersRead) {
+		_isHeadersRead = 1;
+		return DONE;
+	}
+	return (0);
+}
+
 // Handle the request received on the provided client socket
 int Request::handleRequest(int clientSocket) {
 	// Receive the request from the client
-	std::string request;
-	unused(clientSocket);
-	request = _buffer;
+	int rcvRes = recvRequest(clientSocket);
+	if (rcvRes == DISCONNECTED) {
+		return DISCONNECTED;
+	}
 
-	// Parse the request components
-	parseMethod(request);
-	parseHeaders(request);
-	parseQueries(request);
-	parseCookies(request);
-
-	// "log the request"
+		if (rcvRes == DONE && _isHeadersRead) {
+			parseMethod(_buffer);
+			parseHeaders(_buffer);
+			parseQueries(_buffer);
+			parseCookies(_buffer);
+			// parseBody(_buffer);
+		}
 	std::cout << " - - " << "\"" << _method << " " << _path << " " << _protocol << "\" "  << std::endl;
 	return (0);
 }

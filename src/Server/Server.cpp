@@ -75,9 +75,6 @@ int Server::start(void) {
 
     std::cout << "Server started on port: " << _port << std::endl;
 
-    std::string full_text = "";
-    int readyToServe = 0;
-    Request req;
     int res = 0;
     while (true) {
         fd_set readSet = masterSet;
@@ -96,51 +93,34 @@ int Server::start(void) {
                 std::cerr << "Error: accept() failed" << std::endl;
                 continue;
             }
-            std::cout << "New client connected with socket: " << clientSocket << std::endl;
+            // std::cout << "New client connected with socket: " << clientSocket << std::endl;
             clients.push_back(clientSocket);
             FD_SET(clientSocket, &masterSet);
             if (clientSocket > maxFd) {
                 maxFd = clientSocket;
             }
+            requests[clientSocket] = Request();
             responses[clientSocket] = Response(clientSocket);
         }
         // iterate through the clients and just print the request
         for (size_t i = 0; i < clients.size(); i++) {
             int clientSocket = clients[i];
-            if (full_text.find("\r\n\r\n") != std::string::npos && !readyToServe) {
-                req.setBuffer(full_text);
-                req.parseMethod(full_text);
-                req.parseHeaders(full_text);
-                req.parseQueries(full_text);
-                req.parseCookies(full_text);
 
-                std::cout << " - - " << "\"" << req.getMethod() << " " << req.getPath() << " " << req.getProtocol() << "\" "  << std::endl;
-                std::cout << readyToServe << std::endl;
-                readyToServe = 1;
-            }
-            if (FD_ISSET(clientSocket, &readSet) && !readyToServe) {
-                char buffer[1];
-                int readRes = recv(clientSocket, buffer, sizeof(buffer), 0);
-                if (readRes < 0) {
-                    std::cerr << "Error: recv() failed" << std::endl;
-                    return ERROR;
-
-                }
-                buffer[readRes] = '\0';
-                full_text += buffer;
+            if (FD_ISSET(clientSocket, &readSet)) {
+                requests[clientSocket].handleRequest(clientSocket);        
             }
             
-            if (FD_ISSET(clientSocket, &writeSet) && readyToServe) {
-                res = responses[clientSocket].sendResp(req);
+            if (FD_ISSET(clientSocket, &writeSet) && requests[clientSocket].isHeadersRead()) {
+                res = responses[clientSocket].sendResp(requests[clientSocket]);
             }
-            if (res == DONE && readyToServe) {
+            if (res == DONE && requests[clientSocket].isHeadersRead()) {
                 close(clientSocket);
                 FD_CLR(clientSocket, &masterSet);
                 clients.erase(clients.begin() + i);
                 responses.erase(clientSocket);
-                full_text.clear();
-                readyToServe = 0;
+                requests.erase(clientSocket);
                 i--;
+                res = 0;
             }
         }
     }

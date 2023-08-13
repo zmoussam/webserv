@@ -46,8 +46,17 @@ Response::~Response()
 void    Response::InitFile(Request &req) {
     _filePath = constructFilePath(req.getPath());
     _fd = open(_filePath.c_str(), O_RDONLY);
+}
 
-
+void    Response::InitHeaders(Request &req) {
+    unused(req);
+    if (_fd == -1) {
+        _fd = open("www/404.html", O_RDONLY);
+        _status_code = "404 Not Found";
+    }
+    else {
+        _status_code = "200 OK";
+    }
     _fileSize = lseek(_fd, 0, SEEK_END);
     lseek(_fd, 0, SEEK_SET);
     _content_length = _fileSize;
@@ -57,10 +66,11 @@ void    Response::InitFile(Request &req) {
 int Response::sendResp(Request &req) {
     if (_fd == -1) {
         InitFile(req);
+        InitHeaders(req);
     }
     if (_headersSent == false) {
         std::stringstream ss;
-        ss << "HTTP/1.1 200 OK\r\n";
+        ss << "HTTP/1.1 " << _status_code << "\r\n";
         ss << "Server: " << _server << "\r\n";
         ss << "Content-Type: " << _content_type << "\r\n";
         ss << "Content-Length: " << _content_length << "\r\n";
@@ -69,7 +79,7 @@ int Response::sendResp(Request &req) {
         send(_clientSocket, _buffer.c_str(), _buffer.length(), 0);
         _headersSent = true;
     }
-    off_t bytesSent = 512;
+    off_t bytesSent = 1024;
     int res = sendfile(_fd, _clientSocket, _offset, &bytesSent, NULL, 0);
     if (res == -1 && _offset >= _fileSize) {
         return DONE;

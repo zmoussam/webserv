@@ -6,6 +6,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <ctime>
+#include <sstream>
+
+
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Utils.hpp"

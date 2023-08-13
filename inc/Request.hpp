@@ -67,6 +67,8 @@ class Request {
 		const std::string& getBody() const;
 		const std::string& getQuery(const std::string& key) const;
 		const std::string& getCookie(const std::string& key) const;
+		const std::string& getBuffer() const;
+		int isHeadersRead() const;
 		int keepAlive(void) const;
 		int handleRequest(int clientSocket);
 		void parseBody(const std::string& request);

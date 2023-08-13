@@ -8,7 +8,8 @@ Request::Request()
 	  _body(""),
 	  _queries(),
 	  _cookies(),
-	  _keepAlive(1)
+	  _keepAlive(1),
+	  _isHeadersRead(false)
 {
 }
 
@@ -93,6 +94,9 @@ const std::string& Request::getQuery(const std::string& key) const {
 const std::string& Request::getCookie(const std::string& key) const {
 	return _cookies.at(key);
 }
+int Request::isHeadersRead() const {
+	return _isHeadersRead;
+}
 
 
 // Get the first line of the request
@@ -120,6 +124,7 @@ std::string splitLine(const std::string& line, int idx) {
     }
     return result;
 }
+
 
 // Get the headers section of the request
 std::string getHeaders(const std::string& request) {

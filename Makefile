@@ -1,5 +1,5 @@
 CC = c++
-CFLAGS = -Wall -Wextra -Werror -std=c++98 #-fsanitize=address -g
+CFLAGS = -Wall -Wextra -Werror -std=c++98 -g #-fsanitize=address -g
 LDFLAGS =
 
 SRC_DIR = src
