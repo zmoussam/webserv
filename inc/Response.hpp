@@ -46,3 +46,4 @@ class Response
 };
 
 std::string getContentType(std::string filename);
+std::string constructFilePath(const std::string& requestPath);

@@ -116,8 +116,6 @@ int Server::start(void) {
 
                 std::cout << " - - " << "\"" << req.getMethod() << " " << req.getPath() << " " << req.getProtocol() << "\" "  << std::endl;
                 std::cout << readyToServe << std::endl;
-                std::cout << "Found end of request" << std::endl;
-                std::cout << "Method: " << req.getMethod() << std::endl;
                 readyToServe = 1;
             }
             if (FD_ISSET(clientSocket, &readSet) && !readyToServe) {
@@ -129,7 +127,6 @@ int Server::start(void) {
 
                 }
                 buffer[readRes] = '\0';
-                std::cout << "Received from client: " << buffer << std::endl;
                 full_text += buffer;
             }
             

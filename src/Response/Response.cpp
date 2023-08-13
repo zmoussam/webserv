@@ -44,12 +44,14 @@ Response::~Response()
 }
 
 void    Response::InitFile(Request &req) {
-    std::stringstream ss;
-    _filePath = ROOT_PATH + req.getPath();
+    _filePath = constructFilePath(req.getPath());
     _fd = open(_filePath.c_str(), O_RDONLY);
+
+
     _fileSize = lseek(_fd, 0, SEEK_END);
+    lseek(_fd, 0, SEEK_SET);
     _content_length = _fileSize;
-    _content_type = "text/html";
+    _content_type = getContentType(_filePath);
 }
 
 int Response::sendResp(Request &req) {
@@ -70,7 +72,6 @@ int Response::sendResp(Request &req) {
     off_t bytesSent = 512;
     int res = sendfile(_fd, _clientSocket, _offset, &bytesSent, NULL, 0);
     if (res == -1 && _offset >= _fileSize) {
-        std::cerr << "Error: sendfile() failed" << std::endl;
         return DONE;
     }
     _offset += bytesSent;

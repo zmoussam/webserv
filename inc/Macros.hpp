@@ -1,5 +1,6 @@
 #pragma once
 
+
 #define unused(x) (void)(x)
 #define ERROR -1
 #define SUCCESS 0
@@ -9,6 +10,9 @@
 #define CONTINUE 3
 #define BUFSIZE 1024
 #define ROOT_PATH "./www"
+# include <string>
+# include <map>
+extern std::map<std::string, std::string> mimeTypes;
 
 enum HttpStatusCode {
     OK = 200,
