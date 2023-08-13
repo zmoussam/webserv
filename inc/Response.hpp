@@ -6,6 +6,8 @@
 # include <netinet/in.h>
 # include <fstream>
 # include <sstream>
+#include <sys/sendfile.h>
+#include <fcntl.h>
 
 # include "Request.hpp"
 #include "Macros.hpp"
