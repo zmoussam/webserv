@@ -53,6 +53,7 @@ void    Response::InitHeaders(Request &req) {
     if (_fd == -1) {
         _fd = open("www/404.html", O_RDONLY);
         _status_code = "404 Not Found";
+        _filePath = "www/404.html";
     }
     else {
         _status_code = "200 OK";

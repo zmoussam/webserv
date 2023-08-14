@@ -6,14 +6,12 @@
 /*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/14 18:03:52 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/08/14 18:10:17 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
-#include "Macros.hpp"
-#include <sys/socket.h>
-#include <sstream>
+
 
 size_t getBodyLength(std::string Content_length)
 {
