@@ -54,3 +54,7 @@ std::map<std::string, std::string> Request::getCookies() const
 bool Request::isHeadersRead() const {
 	return _isHeadersRead;
 }
+
+bool Request::isBodyRead() const {
+	return _isBodyRead;
+}

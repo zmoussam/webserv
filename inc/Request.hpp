@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/13 19:07:37 by aarbaoui         ###   ########.fr       */
+/*   Updated: 2023/08/14 17:15:52 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,10 +32,12 @@ class Request
         bool _keepAlive;
 		bool _isHeadersRead;
         int _clientSocket;
+        bool _isBodyRead;
     public:
 		int recvRequest();
 		int handleRequest();
 		bool isHeadersRead() const;
+		bool isBodyRead() const;
         std::string getFullRequest() const;
         size_t getRequestLength() const;
         std::string getBody() const;

@@ -117,13 +117,12 @@ int Server::start(void) {
                     i--;
                     req = 0;
                 }
-                std::cout << requests[clientSocket].getPath() << std::endl;
             }
             
-            if (FD_ISSET(clientSocket, &writeSet) && requests[clientSocket].isHeadersRead()) {
+            if (FD_ISSET(clientSocket, &writeSet) && requests[clientSocket].isHeadersRead() && requests[clientSocket].isBodyRead()) {
                 res = responses[clientSocket].sendResp(requests[clientSocket]);
             }
-            if (res == DONE && requests[clientSocket].isHeadersRead()) {
+            if (res == DONE && requests[clientSocket].isHeadersRead() && requests[clientSocket].isBodyRead()) {
                 close(clientSocket);
                 FD_CLR(clientSocket, &masterSet);
                 clients.erase(clients.begin() + i);

@@ -10,7 +10,7 @@
 #define CONTINUE 3
 #define DISCONNECTED 4
 #define BUFSIZE 1024
-#define ROOT_PATH "/goinfre/aarbaoui"
+#define ROOT_PATH "./www"
 # include <string>
 # include <map>
 extern std::map<std::string, std::string> mimeTypes;
