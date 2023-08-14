@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/14 18:10:17 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/08/14 19:20:12 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ size_t getBodyLength(std::string Content_length)
         bodylength += Content_length[i];
         i++;
     }
-    return std::stoi(bodylength);
+    return std::atoi(bodylength.c_str());
 }
 
 int Request::recvRequest() {
@@ -72,8 +72,8 @@ int Request::handleRequest() {
 	}
 	if (rcvRes == DONE && _isHeadersRead ) {
 		parsseRequest();
+	    std::cout << " - - " << "\"" << _method << " " << _URI << " " << _httpVersion << "\"" << std::endl;
 	}
-	// std::cout << " - - " << "\"" << _method << " " << _path << " " << _protocol << "\" "  << std::endl;
 	return (0);
 }
 
@@ -233,7 +233,7 @@ void Request::parsseBody(size_t &_bodyPos)
 {
     if (_headers.find("Content-Length") != _headers.end())
         _body = _request.substr(_bodyPos + 4 , std::atoi(_headers["Content-Length"].c_str()));
-    std::cout << "body \n" <<  _body <<  std::endl;
+    std::cout << _body << std::endl;
 }
 
 Request::~Request()

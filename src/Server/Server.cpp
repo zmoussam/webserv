@@ -1,5 +1,4 @@
 # include "Server.hpp"
-# include <vector>
 # include <poll.h>
 # include <map>
 # include <ctime>
@@ -14,7 +13,8 @@ std::map<std::string, std::string> mimeTypes = getMimeTypes();
  * @param address The server address to bind to.
  * @param port The port number to listen on.
  */
-Server::Server(int port) {
+Server::Server(int port) : _requests(), _responses(), _clients()
+{
     int reuse = 1;
     
     _port = port;
@@ -34,6 +34,32 @@ Server::Server(int port) {
 
     if (bind(_serverSocket, (struct sockaddr*)&_serverAddress, sizeof(_serverAddress)) < 0) {
         std::cerr << "Error: bind() failed" << std::endl;
+        std::cerr << strerror(errno) << std::endl;
+
+        return;
+    }
+}
+
+Server::Server() : _requests(), _responses(), _clients()
+{
+    int reuse = 1;
+    _port = 8000;
+    _serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (_serverSocket < 0) {
+        std::cerr << "Error: socket() failed" << strerror(errno) << std::endl;
+        return;
+    }
+    _serverAddress.sin_family = AF_INET;
+    _serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+    _serverAddress.sin_port = htons(_port);
+
+    if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&reuse, sizeof(reuse)) < 0) {
+        std::cerr << "Error: setsockopt() failed" << std::endl;
+        return;
+    }
+
+    if (bind(_serverSocket, (struct sockaddr*)&_serverAddress, sizeof(_serverAddress)) < 0) {
+        std::cerr << "Error: bind() failed" << std::endl;
         return;
     }
 }
@@ -43,7 +69,21 @@ Server::Server(int port) {
  * Closes the server socket.
  */
 Server::~Server() {
-    close(_serverSocket);
+}
+
+Server::Server(const Server& other) {
+    _port = other._port;
+    _serverSocket = other._serverSocket;
+    _serverAddress = other._serverAddress;
+    _maxFd = other._maxFd;
+}
+
+Server& Server::operator=(const Server& other) {
+
+    _port = other._port;
+    _serverSocket = other._serverSocket;
+    _serverAddress = other._serverAddress;
+    return *this;
 }
 
 void Server::setPort(int port) {
@@ -54,83 +94,79 @@ int Server::getPort() const {
 	return _port;
 }
 
+int Server::getSocket() const {
+    return _serverSocket;
+}
+
+ unsigned int Server::getServerAddress() const {
+    return _serverAddress.sin_addr.s_addr;
+}
+
 /**
  * Starts the server by listening for incoming client connections.
- * Handles client requests in an infinite loop.
+ * Handles client _requests in an infinite loop.
  */
 int Server::start(void) {
-    std::vector<int> clients;
-    std::map<int, Request> requests;
-    std::map<int, Response> responses;
-
-    if (listen(_serverSocket, 1024) < 0) {
+    std::cout << _serverSocket << std::endl;
+    if (listen(_serverSocket, 512) < 0) {
         std::cerr << "Error: listen() failed" << std::endl;
+        std::cerr << strerror(errno) << std::endl;
         return ERROR;
     }
-
-    fd_set masterSet;
-    FD_ZERO(&masterSet);
-    FD_SET(_serverSocket, &masterSet);
-    int maxFd = _serverSocket;
-
     std::cout << "Server started on port: " << _port << std::endl;
-    int req = 0;
-    int res = 0;
-    while (true) {
-        fd_set readSet = masterSet;
-        fd_set writeSet = masterSet;
-        int selectRes = select(maxFd + 1, &readSet, &writeSet, NULL, NULL);
 
-        if (selectRes < 0) {
-            std::cerr << "Error: select() failed" << std::endl;
+    return OK;
+}
+
+int Server::addToSets(fd_set& masterSet, fd_set& readSet, fd_set& writeSet, int& maxFd) {
+    unused(readSet);
+    unused(writeSet);
+    unused(maxFd);
+    for (size_t i = 0; i < _clients.size(); i++) {
+        FD_SET(_clients[i], &masterSet);
+    }
+    return OK;
+}
+
+int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) {
+    if (FD_ISSET(_serverSocket, &readSet)) {
+        int clientSocket = accept(_serverSocket, NULL, NULL);
+        if (clientSocket < 0 || clientSocket > 1024) {
+            std::cerr << "Error: accept() failed" << std::endl;
             return ERROR;
         }
+        fcntl(clientSocket, F_SETFL, O_NONBLOCK);
+        _clients.push_back(clientSocket);
+        _requests[clientSocket] = Request(clientSocket);
+        _responses[clientSocket] = Response(clientSocket);
+    }
 
-        // if client is ready to be read from accept the connection
-        if (FD_ISSET(_serverSocket, &readSet)) {
-            int clientSocket = accept(_serverSocket, NULL, NULL);
-            if (clientSocket < 0) {
-                std::cerr << "Error: accept() failed" << std::endl;
-                continue;
-            }
-            // std::cout << "New client connected with socket: " << clientSocket << std::endl;
-            clients.push_back(clientSocket);
-            FD_SET(clientSocket, &masterSet);
-            if (clientSocket > maxFd) {
-                maxFd = clientSocket;
-            }
-            requests[clientSocket] = Request(clientSocket);
-            responses[clientSocket] = Response(clientSocket);
-        }
-        // iterate through the clients and just print the request
-        for (size_t i = 0; i < clients.size(); i++) {
-            int clientSocket = clients[i];
-
-            if (FD_ISSET(clientSocket, &readSet)) {
-                req = requests[clientSocket].handleRequest();        
-                if (req == DISCONNECTED) {
-                    close(clientSocket);
-                    FD_CLR(clientSocket, &masterSet);
-                    clients.erase(clients.begin() + i);
-                    responses.erase(clientSocket);
-                    requests.erase(clientSocket);
-                    i--;
-                    req = 0;
-                }
-            }
-            
-            if (FD_ISSET(clientSocket, &writeSet) && requests[clientSocket].isHeadersRead() && requests[clientSocket].isBodyRead()) {
-                res = responses[clientSocket].sendResp(requests[clientSocket]);
-            }
-            if (res == DONE && requests[clientSocket].isHeadersRead() && requests[clientSocket].isBodyRead()) {
-                close(clientSocket);
+    for (size_t i = 0; i < _clients.size(); i++) {
+        int clientSocket = _clients[i];
+        if (FD_ISSET(clientSocket, &readSet)) {
+            int req = _requests[clientSocket].handleRequest();
+            if (req == DISCONNECTED) {
                 FD_CLR(clientSocket, &masterSet);
-                clients.erase(clients.begin() + i);
-                responses.erase(clientSocket);
-                requests.erase(clientSocket);
+                close(clientSocket);
+                _clients.erase(_clients.begin() + i);
+                _responses.erase(clientSocket);
+                _requests.erase(clientSocket);
+                i--;
+                req = 0;
+            }
+        }
+        if (FD_ISSET(clientSocket, &writeSet) && _requests[clientSocket].isHeadersRead() && _requests[clientSocket].isBodyRead()) {
+            int res = _responses[clientSocket].sendResp(_requests[clientSocket]);
+            if (res == DONE) {
+                FD_CLR(clientSocket, &masterSet);
+                close(clientSocket);
+                _clients.erase(_clients.begin() + i);
+                _responses.erase(clientSocket);
+                _requests.erase(clientSocket);
                 i--;
                 res = 0;
             }
         }
     }
+    return OK;
 }

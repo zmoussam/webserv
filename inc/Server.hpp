@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <ctime>
 #include <sstream>
+# include <vector>
 
 
 #include "Request.hpp"
@@ -19,16 +20,26 @@ class Server {
 	private:
 		int _port;
 		int _serverSocket;
+		fd_set _masterSet;
+		int _maxFd;
 		struct sockaddr_in _serverAddress;
-	
+		std::map<int, Request> _requests;
+    	std::map<int, Response> _responses;
+		std::vector<int> _clients;
 	public:
+		Server();
 		Server(int port);
 		~Server();
-
+		Server(const Server& other);
+		Server& operator=(const Server& other);
 		void setPort(int port);
 
 		const std::string& getAddress() const;
 		int getPort() const;
-
-		int start();
+		int getSocket() const;
+		 unsigned int getServerAddress() const;
+		int start(void);
+		int stop(void);
+		int handleClients(fd_set& readSet, fd_set& writeSet, fd_set& masterSet);
+		int addToSets(fd_set& masterSet, fd_set& readSet, fd_set& writeSet, int& maxFd);
 };
