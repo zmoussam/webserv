@@ -1,10 +1,14 @@
 # include "Server.hpp"
+# include "Config.hpp"
 
-int main(void) {
+int main() {
     std::vector<Server> servers;
-    
-    for (int i = 0; i < 3; i++) {
-        servers.push_back(Server(8000 + i));
+    Config config;
+
+    config = config.parsefile();
+
+    for (size_t i = 0; i < config._servers.size(); i++) {
+        servers.push_back(Server(config._servers[i].getNum(LISTEN)));
     }
 
     for (size_t i = 0; i < servers.size(); i++) {
