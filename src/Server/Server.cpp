@@ -34,8 +34,6 @@ Server::Server(int port) : _requests(), _responses(), _clients()
 
     if (bind(_serverSocket, (struct sockaddr*)&_serverAddress, sizeof(_serverAddress)) < 0) {
         std::cerr << "Error: bind() failed" << std::endl;
-        std::cerr << strerror(errno) << std::endl;
-
         return;
     }
 }
@@ -107,7 +105,6 @@ int Server::getSocket() const {
  * Handles client _requests in an infinite loop.
  */
 int Server::start(void) {
-    std::cout << _serverSocket << std::endl;
     if (listen(_serverSocket, 512) < 0) {
         std::cerr << "Error: listen() failed" << std::endl;
         std::cerr << strerror(errno) << std::endl;
@@ -118,10 +115,7 @@ int Server::start(void) {
     return OK;
 }
 
-int Server::addToSets(fd_set& masterSet, fd_set& readSet, fd_set& writeSet, int& maxFd) {
-    unused(readSet);
-    unused(writeSet);
-    unused(maxFd);
+int Server::addToSets(fd_set& masterSet) {
     for (size_t i = 0; i < _clients.size(); i++) {
         FD_SET(_clients[i], &masterSet);
     }

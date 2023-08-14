@@ -41,5 +41,5 @@ class Server {
 		int start(void);
 		int stop(void);
 		int handleClients(fd_set& readSet, fd_set& writeSet, fd_set& masterSet);
-		int addToSets(fd_set& masterSet, fd_set& readSet, fd_set& writeSet, int& maxFd);
+		int addToSets(fd_set& masterSet);
 };

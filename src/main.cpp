@@ -3,7 +3,7 @@
 int main(void) {
     std::vector<Server> servers;
     
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 3; i++) {
         servers.push_back(Server(8000 + i));
     }
 
@@ -11,7 +11,6 @@ int main(void) {
         servers[i].start();
     }
     fd_set masterSet, readSet, writeSet;
-    int maxFd = -1;
     FD_ZERO(&masterSet);
     FD_ZERO(&readSet);
     FD_ZERO(&writeSet);
@@ -22,7 +21,7 @@ int main(void) {
 
     while (true) {
         for (size_t i = 0; i < servers.size(); i++) {
-            servers[i].addToSets(masterSet, readSet, writeSet, maxFd);
+            servers[i].addToSets(masterSet);
         }
 
         readSet = masterSet;
