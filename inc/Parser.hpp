@@ -23,11 +23,12 @@ class Parser {
         Location parseLocation();
         Location parseLocationBody();
         std::vector<Token> tokens;
+        ServerConf checkDupRules(ServerConf server);
     public:
         Parser();
         ~Parser();
-        Config parseConfig();
-        Config parseToken(void);
+        void parseConfig(Config &config);
+        void parseToken(Config &config);
         bool look(std::string type);
         Token match(std::string type);
 };

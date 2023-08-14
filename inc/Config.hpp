@@ -29,9 +29,10 @@
 class ServerConf;
 class Config {
     public:
+        char *_file;
         Config();
+        Config(char *file);
         ~Config();
-        Config parsefile();
         std::vector<ServerConf>  _servers;
 };
 
@@ -76,3 +77,4 @@ class Location: public ServerConf {
         void setLocationName(std::string location_name);
         void setMethods(std::vector<std::string> methods);
 };
+void parsefile(Config &config);
