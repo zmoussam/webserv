@@ -19,6 +19,7 @@ Server::Server(int port) : _requests(), _responses(), _clients()
     
     _port = port;
     _serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    fcntl(_serverSocket, F_SETFL, O_NONBLOCK);
     if (_serverSocket < 0) {
         std::cerr << "Error: socket() failed" << strerror(errno) << std::endl;
         return;
@@ -105,7 +106,7 @@ int Server::getSocket() const {
  * Handles client _requests in an infinite loop.
  */
 int Server::start(void) {
-    if (listen(_serverSocket, 512) < 0) {
+    if (listen(_serverSocket, 1024) < 0) {
         std::cerr << "Error: listen() failed" << std::endl;
         std::cerr << strerror(errno) << std::endl;
         return ERROR;
@@ -129,7 +130,6 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
             std::cerr << "Error: accept() failed" << std::endl;
             return ERROR;
         }
-        fcntl(clientSocket, F_SETFL, O_NONBLOCK);
         _clients.push_back(clientSocket);
         _requests[clientSocket] = Request(clientSocket);
         _responses[clientSocket] = Response(clientSocket);
