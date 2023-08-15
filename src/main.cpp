@@ -11,7 +11,7 @@ int main(int ac, char **av) {
 
     parsefile(config);
     for (size_t i = 0; i < config._servers.size(); i++) {
-        servers.push_back(Server(config._servers[i].getNum(LISTEN)));
+        servers.push_back(Server(config._servers[i]));
     }
 
     for (size_t i = 0; i < servers.size(); i++) {
@@ -24,7 +24,6 @@ int main(int ac, char **av) {
     for (size_t i = 0; i < servers.size(); i++) {
         FD_SET(servers[i].getSocket(), &masterSet);
     }
-    
 
     while (true) {
         for (size_t i = 0; i < servers.size(); i++) {
