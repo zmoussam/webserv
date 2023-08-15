@@ -105,7 +105,7 @@ int Server::getSocket() const {
  * Handles client _requests in an infinite loop.
  */
 int Server::start(void) {
-    if (listen(_serverSocket, 512) < 0) {
+    if (listen(_serverSocket, 1024) < 0) {
         std::cerr << "Error: listen() failed" << std::endl;
         std::cerr << strerror(errno) << std::endl;
         return ERROR;

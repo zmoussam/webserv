@@ -293,15 +293,15 @@ Config Parser::parseToken()
     try {
         Tokenizer(this->tokens);
         config = parseConfig();
-        // for (size_t i = 0; i < config._servers.size(); i++) {
-        //     std::cout << "listen: " << config._servers[i].getNum(LISTEN) << std::endl;
-        //     std::cout << "host: " << config._servers[i].getString(HOST) << std::endl;
-        //     std::cout << "server_name: " << config._servers[i].getString(SERVER_NAME) << std::endl;
-        //     for (size_t j = 0; j < config._servers[i].location.size(); j++) {
-        //         std::cout << "location: " << config._servers[i].location[j].getLocationName() << std::endl;
-        //         std::cout << "root: " << config._servers[i].location[j].getString(ROOT) << std::endl;
-        //     }
-        // }
+        for (size_t i = 0; i < config._servers.size(); i++) {
+            std::cout << "listen: " << config._servers[i].getNum(LISTEN) << std::endl;
+            std::cout << "host: " << config._servers[i].getString(HOST) << std::endl;
+            std::cout << "server_name: " << config._servers[i].getString(SERVER_NAME) << std::endl;
+            for (size_t j = 0; j < config._servers[i].location.size(); j++) {
+                std::cout << "location: " << config._servers[i].location[j].getLocationName() << std::endl;
+                std::cout << "root: " << config._servers[i].location[j].getString(ROOT) << std::endl;
+            }
+        }
     } catch (std::exception &e) {
         std::cout << e.what() << std::endl;
     }
