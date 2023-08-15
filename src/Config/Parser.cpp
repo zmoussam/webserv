@@ -214,21 +214,24 @@ ServerConf Parser::parseServer() {
     match("{");
     ServerConf server = parseServerBody();
     match("}");
+    if (!look("server") && index != tokens.size())
+        throw std::runtime_error(UNEXPECTED_TOKEN);
     return server;
 }
 
-Config Parser::parseConfig() {
-    Config config;
-
+void Parser::parseConfig(Config &config) {
+    if (look("server"))
+    {
         while (look("server"))
         {
             if (look("server"))
                 config._servers.push_back(parseServer());
             else
                 throw std::runtime_error(UNEXPECTED_TOKEN);
-
         }
-    return config;
+    }
+    else
+        throw std::runtime_error(UNEXPECTED_TOKEN);
 }
 
 std::string parseKey(std::string token)
@@ -268,9 +271,9 @@ void   fillTokens(std::string line, Token tokens, std::vector<Token> &tokenArr)
     }
 }
 
-void Tokenizer(std::vector<Token> &tokens)
+void Tokenizer(std::vector<Token> &tokens, char *fileName)
 {
-    std::ifstream file(CONF_FILE);
+    std::ifstream file(fileName);
     std::string line;
     Token token;
     if (file.is_open()) {
@@ -287,30 +290,27 @@ void Tokenizer(std::vector<Token> &tokens)
         throw std::runtime_error(FAIL_OPEN);
 }
 
-Config Parser::parseToken()
+void Parser::parseToken(Config &config)
 {
-    Config config;
     try {
-        Tokenizer(this->tokens);
-        config = parseConfig();
-        for (size_t i = 0; i < config._servers.size(); i++) {
-            std::cout << "listen: " << config._servers[i].getNum(LISTEN) << std::endl;
-            std::cout << "host: " << config._servers[i].getString(HOST) << std::endl;
-            std::cout << "server_name: " << config._servers[i].getString(SERVER_NAME) << std::endl;
-            for (size_t j = 0; j < config._servers[i].location.size(); j++) {
-                std::cout << "location: " << config._servers[i].location[j].getLocationName() << std::endl;
-                std::cout << "root: " << config._servers[i].location[j].getString(ROOT) << std::endl;
-            }
-        }
+        Tokenizer(this->tokens, config._file);
+        parseConfig(config);
+        // for (size_t i = 0; i < config._servers.size(); i++) {
+        //     std::cout << "listen: " << config._servers[i].getNum(LISTEN) << std::endl;
+        //     std::cout << "host: " << config._servers[i].getString(HOST) << std::endl;
+        //     std::cout << "server_name: " << config._servers[i].getString(SERVER_NAME) << std::endl;
+        //     for (size_t j = 0; j < config._servers[i].location.size(); j++) {
+        //         std::cout << "location: " << config._servers[i].location[j].getLocationName() << std::endl;
+        //         std::cout << "root: " << config._servers[i].location[j].getString(ROOT) << std::endl;
+        //     }
+        // }
     } catch (std::exception &e) {
         std::cout << e.what() << std::endl;
+        exit(1);
     }
-    return config;
 }
-Config Config::parsefile()
+void parsefile(Config &config)
 {
-    Config config;
     Parser  parse;
-    config = parse.parseToken();
-    return config;
+    parse.parseToken(config);
 }

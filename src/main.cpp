@@ -1,14 +1,17 @@
 # include "Server.hpp"
 # include "Config.hpp"
 
-int main() {
+int main(int ac, char **av) {
+    if (ac != 2) {
+        std::cerr << "Error: wrong number of arguments" << std::endl;
+        return ERROR;
+    }
     std::vector<Server> servers;
-    Config config;
+    Config config(av[1]);
 
-    config = config.parsefile();
-
+    parsefile(config);
     for (size_t i = 0; i < config._servers.size(); i++) {
-        servers.push_back(Server(config._servers[i].getNum(LISTEN)));
+        servers.push_back(Server(config._servers[i]));
     }
 
     for (size_t i = 0; i < servers.size(); i++) {
@@ -21,7 +24,6 @@ int main() {
     for (size_t i = 0; i < servers.size(); i++) {
         FD_SET(servers[i].getSocket(), &masterSet);
     }
-    
 
     while (true) {
         for (size_t i = 0; i < servers.size(); i++) {

@@ -15,10 +15,14 @@
 #include "Response.hpp"
 #include "Utils.hpp"
 #include "Macros.hpp"
+# include "Config.hpp"
 
 class Server {
 	private:
+		ServerConf _serverConf;
+		
 		int _port;
+		std::string host;
 		int _serverSocket;
 		fd_set _masterSet;
 		int _maxFd;
@@ -28,7 +32,7 @@ class Server {
 		std::vector<int> _clients;
 	public:
 		Server();
-		Server(int port);
+		Server(ServerConf &serverConf);
 		~Server();
 		Server(const Server& other);
 		Server& operator=(const Server& other);

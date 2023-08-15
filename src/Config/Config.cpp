@@ -1,6 +1,10 @@
 #include"Config.hpp"
 
 Config::Config() {}
+Config::Config(char *file)
+{
+    this->_file = file;
+}
 Config::~Config() {}
 ServerConf::ServerConf() {
     this->_autoindex = false;
