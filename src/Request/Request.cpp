@@ -3,26 +3,49 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/14 19:20:12 by aarbaoui         ###   ########.fr       */
+/*   Updated: 2023/08/16 14:27:11 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 
-
-size_t getBodyLength(std::string Content_length)
+int Request::waitForBody(size_t headerlength)
 {
-    std::string bodylength = "";
-    int i = 0;
-    while (Content_length[i] != '\r' && std::isdigit(Content_length[i]))
+    size_t bodyLengthPos = _request.find("Content-Length");
+    size_t chunkedPos = _request.find("Transfer-Encoding:");
+    if (bodyLengthPos != std::string::npos)
     {
-        bodylength += Content_length[i];
-        i++;
+        size_t bodyLength = getBodyLength(_request.substr(bodyLengthPos + 16, \
+        _request.find("\r\n", bodyLengthPos + 16) - bodyLengthPos - 16));
+        if (_request.substr(headerlength + 4).size() == bodyLength)
+        {
+            _isBodyRead = true;
+            _requestLength = _request.size();
+            return DONE;
+        }
     }
-    return std::atoi(bodylength.c_str());
+    else if (chunkedPos != std::string::npos \
+    && _request.substr(chunkedPos, _request.find("\r\n", chunkedPos) \
+    - chunkedPos).find("chunked") != std::string::npos)
+    {
+        if (_request.find("\r\n0\r\n\r\n", chunkedPos) != std::string::npos)
+        {
+            // std::cout << "chunked" << std::endl;
+            _isBodyRead = true;
+            _requestLength = _request.size();
+            return DONE;
+        }
+    }
+    else
+    {
+        _isBodyRead = true;
+        _requestLength = _request.size();
+        return DONE;
+    }
+    return (0);
 }
 
 int Request::recvRequest() {
@@ -42,27 +65,10 @@ int Request::recvRequest() {
     headerlength = _request.find("\r\n\r\n");
 	if (headerlength != std::string::npos && !_isBodyRead) {
 		_isHeadersRead = true;
-        size_t bodyLengthPos = _request.find("Content-Length");
-        if (bodyLengthPos != std::string::npos)
-        {
-            size_t bodyLength = getBodyLength(_request.substr(bodyLengthPos + 16, _request.find("\r\n", bodyLengthPos + 16) - bodyLengthPos - 16));
-            if (_request.substr(headerlength + 4).size() == bodyLength)
-            {
-                _isBodyRead = true;
-                _requestLength = _request.size();
-                return DONE;
-            }
-        }
-        else
-        {
-            _isBodyRead = true;
-            _requestLength = _request.size();
-            return DONE;
-        }
+        return waitForBody(headerlength);
 	}
 	return (0);
 }
-
 // Handle the request received on the provided client socket
 int Request::handleRequest() {
 	// Receive the request from the client
@@ -70,9 +76,10 @@ int Request::handleRequest() {
 	if (rcvRes == DISCONNECTED) {
 		return DISCONNECTED;
 	}
-	if (rcvRes == DONE && _isHeadersRead ) {
+	if (rcvRes == DONE && _isBodyRead) {
 		parsseRequest();
-	    std::cout << " - - " << "\"" << _method << " " << _URI << " " << _httpVersion << "\"" << std::endl;
+	    // std::cout << " - - " << "\"" << _method << " " << _URI << " " << _httpVersion << "\"" << std::endl;
+        // std::cout << _request << std::endl;
 	}
 	return (0);
 }
@@ -110,30 +117,6 @@ Request::Request() :
      _isBodyRead(false)
 {
 }
-
-// void Request::readRequest(int client_socket)
-// {
-//     char buffer[11];
-//     int rd = 1;
-    
-//     while (rd != 0)
-//     {
-//         memset(buffer, 0, 11);
-//         rd = recv(client_socket, buffer, 10, 0);
-//         if (rd < 0)
-//         {
-//             std::cout << "Error : recieve request failed \n" << strerror(errno) << std::endl;
-//             return;
-//         }
-//         buffer[rd] = '\0';
-//         _request += std::string(buffer);
-//         if (_request.find("\r\n\r\n") != std::string::npos)
-//             break;
-//     }
-    
-//     _requestLength = _request.size();
-//     // std::cout << _request << std::endl;
-// }
 
 void Request::parsseRequest()
 {
@@ -233,6 +216,24 @@ void Request::parsseBody(size_t &_bodyPos)
 {
     if (_headers.find("Content-Length") != _headers.end())
         _body = _request.substr(_bodyPos + 4 , std::atoi(_headers["Content-Length"].c_str()));
+    else if (_headers.find("Transfer-Encoding") != _headers.end() && _headers["Transfer-Encoding"].find("chunked") != std::string::npos)
+    {
+        std::string tmp = _request.substr(_bodyPos + 4);
+        size_t _bodySize = tmp.size();
+        for(size_t i = 0; i < _bodySize; i++)
+        {
+            std::string chunkedSize = "";
+            size_t j = i;
+            for (; tmp[j] != '\r'; j++)
+                chunkedSize += tmp[j];
+            i = j + 2;
+            int chunkIntValue = hexStringToInt(chunkedSize);
+            if (chunkIntValue == 0)
+                break;
+            _body += tmp.substr(i, chunkIntValue);
+            i += chunkIntValue + 1;
+        }
+    }
     std::cout << _body << std::endl;
 }
 

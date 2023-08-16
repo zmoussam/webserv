@@ -6,7 +6,7 @@
 /*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/14 18:10:34 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/08/16 14:24:57 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ class Request
 		int handleRequest();
 		bool isHeadersRead() const;
 		bool isBodyRead() const;
+        int waitForBody(size_t headerLength);
         std::string getFullRequest() const;
         size_t getRequestLength() const;
         std::string getBody() const;
@@ -62,5 +63,8 @@ class Request
         Request(int clientSocket);
         ~Request();
 };
-    
+
+size_t getBodyLength(std::string Content_length);
+int hexStringToInt(const std::string hexString);
+
 #endif

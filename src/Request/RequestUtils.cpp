@@ -58,3 +58,22 @@ bool Request::isHeadersRead() const {
 bool Request::isBodyRead() const {
 	return _isBodyRead;
 }
+
+size_t getBodyLength(std::string Content_length)
+{
+    std::string bodylength = "";
+    int i = 0;
+    while (Content_length[i] != '\r' && std::isdigit(Content_length[i]))
+    {
+        bodylength += Content_length[i];
+        i++;
+    }
+    return std::atoi(bodylength.c_str());
+}
+
+int hexStringToInt(const std::string hexString) {
+    std::istringstream converter(hexString);
+    int intValue;
+    converter >> std::hex >> intValue;
+    return intValue;
+}
