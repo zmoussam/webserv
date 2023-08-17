@@ -6,7 +6,7 @@
 /*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/16 14:24:57 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/08/17 20:09:14 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,23 @@
 #include <map>
 #include <sys/socket.h>
 #include <sstream>
+#include <list>
+#include <vector>
 #include "Macros.hpp"
 #include "Utils.hpp"
+struct BoundaryBody
+{
+    std::map<std::string, std::string> headers;
+    std::vector<std::string> _body;
+    std::string _boundary;
+    size_t _bodysCount;
+    BoundaryBody();
+} ;
+
 class Request
 {
     private:
+        std::stringstream _REQ;
         std::string _request;
         size_t _requestLength;
         std::string _httpVersion;
@@ -29,13 +41,16 @@ class Request
         std::string _URI;
         std::string _method;
         std::string _queries;
+        BoundaryBody _boundaryBody;
         std::map<std::string, std::string> _headers;
         std::map<std::string , std::string> _cookies;
         bool _keepAlive;
 		bool _isHeadersRead;
         int _clientSocket;
         bool _isBodyRead;
+        bool _checkBoundary;
     public:
+        // std::string _requestHeaders;
 		int recvRequest();
 		int handleRequest();
 		bool isHeadersRead() const;
@@ -62,6 +77,26 @@ class Request
         Request();
         Request(int clientSocket);
         ~Request();
+        Request & operator=(const Request & other) {
+            if (this != &other) {
+                this->_REQ.str(other._REQ.str());
+                this->_request = other._request;
+                this->_requestLength = other._requestLength;
+                this->_httpVersion = other._httpVersion;
+                this->_body = other._body;
+                this->_URI = other._URI;
+                this->_method = other._method;
+                this->_queries = other._queries;
+                this->_headers = other._headers;
+                this->_cookies = other._cookies;
+                this->_keepAlive = other._keepAlive;
+                this->_isHeadersRead = other._isHeadersRead;
+                this->_clientSocket = other._clientSocket;
+                this->_isBodyRead = other._isBodyRead;
+                this->_checkBoundary = other._checkBoundary;
+            }
+            return *this;
+        }
 };
 
 size_t getBodyLength(std::string Content_length);

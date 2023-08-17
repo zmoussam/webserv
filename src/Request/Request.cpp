@@ -6,7 +6,7 @@
 /*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/16 14:27:11 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/08/17 21:51:11 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,44 +14,47 @@
 
 int Request::waitForBody(size_t headerlength)
 {
-    size_t bodyLengthPos = _request.find("Content-Length");
-    size_t chunkedPos = _request.find("Transfer-Encoding:");
+    size_t bodyLengthPos = _REQ.str().find("Content-Length");
+    size_t chunkedPos = _REQ.str().find("Transfer-Encoding:");
     if (bodyLengthPos != std::string::npos)
     {
-        size_t bodyLength = getBodyLength(_request.substr(bodyLengthPos + 16, \
-        _request.find("\r\n", bodyLengthPos + 16) - bodyLengthPos - 16));
-        if (_request.substr(headerlength + 4).size() == bodyLength)
+        size_t bodyLength = getBodyLength(_REQ.str().substr(bodyLengthPos + 16, \
+        _REQ.str().find("\r\n", bodyLengthPos + 16) - bodyLengthPos - 16));
+        std::string  body = _REQ.str().substr(headerlength + 4);
+        if (body.size() == bodyLength)
         {
             _isBodyRead = true;
-            _requestLength = _request.size();
+            _requestLength = _REQ.str().size();
+            _request = _REQ.str();
             return DONE;
         }
     }
     else if (chunkedPos != std::string::npos \
-    && _request.substr(chunkedPos, _request.find("\r\n", chunkedPos) \
+    && _REQ.str().substr(chunkedPos, _REQ.str().find("\r\n", chunkedPos) \
     - chunkedPos).find("chunked") != std::string::npos)
     {
-        if (_request.find("\r\n0\r\n\r\n", chunkedPos) != std::string::npos)
+        if (_REQ.str().find("\r\n0\r\n\r\n", chunkedPos) != std::string::npos)
         {
-            // std::cout << "chunked" << std::endl;
             _isBodyRead = true;
-            _requestLength = _request.size();
+            _requestLength = _REQ.str().size();
+            _request = _REQ.str();
             return DONE;
         }
     }
     else
     {
         _isBodyRead = true;
-        _requestLength = _request.size();
+        _requestLength = _REQ.str().size();
+        _request = _REQ.str();
         return DONE;
     }
     return (0);
 }
 
 int Request::recvRequest() {
-	char buffer[1024];
+	char buffer[1024] = {0};
     size_t headerlength = 0;
-	int readRes = recv(_clientSocket, buffer, 1023, 0);
+	int readRes = recv(_clientSocket, buffer, 1024, 0);
 	if (readRes == -1) {
 		std::cerr << "Error: recv() failed" << std::endl;
 		return DONE;
@@ -61,8 +64,8 @@ int Request::recvRequest() {
 		return DISCONNECTED;
 	}
 	buffer[readRes] = '\0';
-	_request += buffer;
-    headerlength = _request.find("\r\n\r\n");
+    this->_REQ.write(buffer, readRes);
+    headerlength = _REQ.str().find("\r\n\r\n");
 	if (headerlength != std::string::npos && !_isBodyRead) {
 		_isHeadersRead = true;
         return waitForBody(headerlength);
@@ -85,6 +88,7 @@ int Request::handleRequest() {
 }
 
 Request::Request(int clientSocket) 	: 
+    _REQ(),
 	_request(""),
     _requestLength(0),
     _httpVersion(""),
@@ -92,16 +96,19 @@ Request::Request(int clientSocket) 	:
 	_URI(""),
     _method(""),
 	_queries(),
+    _boundaryBody(),
 	_headers(),
 	_cookies(),
 	_keepAlive(1),
 	_isHeadersRead(false),
     _clientSocket(clientSocket),
-    _isBodyRead(false)
+    _isBodyRead(false),
+    _checkBoundary(false)
 {
 }
 
 Request::Request() :
+    _REQ(),
     _request(""),
     _requestLength(0),
     _httpVersion(""),
@@ -109,12 +116,14 @@ Request::Request() :
     _URI(""),
     _method(""),
     _queries(),
+    _boundaryBody(),
     _headers(),
     _cookies(),
     _keepAlive(1),
     _isHeadersRead(false),
     _clientSocket(-1),
-     _isBodyRead(false)
+     _isBodyRead(false),
+     _checkBoundary(false)
 {
 }
 
@@ -211,12 +220,49 @@ void Request::parsseCookies()
         _headers.erase("Cookies");
     }
 }
-
 void Request::parsseBody(size_t &_bodyPos)
 {
     if (_headers.find("Content-Length") != _headers.end())
+    {
+        // if(_headers.find("Content-Type") != _headers.end() \
+        // && _headers["Content-Type"].find("multipart/form-data") != std::string::npos\
+        // && _headers["Content-Type"].find("boundary") != std::string::npos)
+        // {
+        //     std::map<std::string, std::string> tmp;
+        //     _checkBoundary = true;
+        //     std::string boundary;
+        //     size_t bodyLength = std::atoi(_headers["Content-Length"].c_str());
+        //     boundary = _headers["Content-Type"].substr(_headers["Content-Type"].find("boundary") + 9);
+        //     for (size_t i = 0; i < bodyLength; i++)
+        //     { 
+        //         size_t nextBodyPos = _request.find(boundary, i);
+        //         if (nextBodyPos != std::string::npos)
+        //         {
+        //             std::string tmpBody = _request.substr(i, nextBodyPos - i);
+        //             size_t headerPos = tmpBody.find("\r\n\r\n");
+        //             if (headerPos != std::string::npos)
+        //             {
+        //                 std::string header = tmpBody.substr(0, headerPos);
+        //                 size_t keyPos = header.find("name=\"");
+        //                 if (keyPos != std::string::npos)
+        //                 {
+        //                     std::string key = header.substr(keyPos + 6);
+        //                     key = key.substr(0, key.find("\""));
+        //                     tmp[key] = tmpBody.substr(headerPos + 4);
+        //                 }
+        //             }
+        //             i = nextBodyPos + boundary.size() - 1;
+        //         }
+        //     }
+            
+        //     // Todo : handle the boundary
+        //     // check if the body is a file or not and handle the boundary
+        // }
+        // else
         _body = _request.substr(_bodyPos + 4 , std::atoi(_headers["Content-Length"].c_str()));
-    else if (_headers.find("Transfer-Encoding") != _headers.end() && _headers["Transfer-Encoding"].find("chunked") != std::string::npos)
+    }
+    else if (_headers.find("Transfer-Encoding") != _headers.end() \
+    && _headers["Transfer-Encoding"].find("chunked") != std::string::npos)
     {
         std::string tmp = _request.substr(_bodyPos + 4);
         size_t _bodySize = tmp.size();
