@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/17 21:51:11 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/08/24 12:08:19 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,7 @@ int Request::handleRequest() {
 	}
 	if (rcvRes == DONE && _isBodyRead) {
 		parsseRequest();
-	    // std::cout << " - - " << "\"" << _method << " " << _URI << " " << _httpVersion << "\"" << std::endl;
+	    std::cout << " - - " << "\"" << _method << " " << _URI << " " << _httpVersion << "\"" << std::endl;
         // std::cout << _request << std::endl;
 	}
 	return (0);
@@ -224,8 +224,8 @@ void Request::parsseBody(size_t &_bodyPos)
 {
     if (_headers.find("Content-Length") != _headers.end())
     {
-        // if(_headers.find("Content-Type") != _headers.end() \
-        // && _headers["Content-Type"].find("multipart/form-data") != std::string::npos\
+        // if(_headers.find("Content-Type") != _headers.end() 
+        // && _headers["Content-Type"].find("multipart/form-data") != std::string::npos
         // && _headers["Content-Type"].find("boundary") != std::string::npos)
         // {
         //     std::map<std::string, std::string> tmp;
@@ -280,7 +280,7 @@ void Request::parsseBody(size_t &_bodyPos)
             i += chunkIntValue + 1;
         }
     }
-    std::cout << _body << std::endl;
+    // std::cout << _body << std::endl;
 }
 
 Request::~Request()

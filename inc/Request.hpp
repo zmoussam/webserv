@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/17 20:09:14 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/08/24 12:05:26 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include <vector>
 #include "Macros.hpp"
 #include "Utils.hpp"
+#include <cstdlib>
 struct BoundaryBody
 {
     std::map<std::string, std::string> headers;
@@ -97,6 +98,25 @@ class Request
             }
             return *this;
         }
+    Request(const Request & other) {
+        // perform deep copy
+        this->_REQ.str(other._REQ.str());
+        this->_request = other._request;
+        this->_requestLength = other._requestLength;
+        this->_httpVersion = other._httpVersion;
+        this->_body = other._body;
+        this->_URI = other._URI;
+        this->_method = other._method;
+        this->_queries = other._queries;
+        this->_headers = other._headers;
+        this->_cookies = other._cookies;
+        this->_keepAlive = other._keepAlive;
+        this->_isHeadersRead = other._isHeadersRead;
+        this->_clientSocket = other._clientSocket;
+        this->_isBodyRead = other._isBodyRead;
+        this->_checkBoundary = other._checkBoundary;
+    }
+
 };
 
 size_t getBodyLength(std::string Content_length);

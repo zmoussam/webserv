@@ -48,6 +48,7 @@ void    Response::InitFile(Request &req) {
     _fd = open(_filePath.c_str(), O_RDONLY);
 }
 
+
 void    Response::InitHeaders(Request &req) {
     unused(req);
     if (_fd == -1) {
@@ -63,7 +64,7 @@ void    Response::InitHeaders(Request &req) {
     _content_length = _fileSize;
     _content_type = getContentType(_filePath);
 }
-
+# ifdef __APPLE__
 int Response::sendResp(Request &req) {
     if (_fd == -1) {
         InitFile(req);
@@ -94,3 +95,51 @@ int Response::sendResp(Request &req) {
     }
     return CONTINUE;
 }
+# else
+#include <sys/sendfile.h>
+
+int Response::sendResp(Request &req) {
+    if (_fd == -1) {
+        InitFile(req);
+        InitHeaders(req);
+    }
+    if (_headersSent == false) {
+        std::stringstream ss;
+        ss << "HTTP/1.1 " << _status_code << "\r\n";
+        ss << "Server: " << _server << "\r\n";
+        ss << "Content-Type: " << _content_type << "\r\n";
+        ss << "Content-Length: " << _content_length << "\r\n";
+        ss << "\r\n";
+        _buffer = ss.str();
+        send(_clientSocket, _buffer.c_str(), _buffer.length(), 0);
+        _headersSent = true;
+    }
+    off_t offset = _offset; // Save the offset before modifying it
+    off_t remainingBytes = _fileSize - offset;
+    
+    ssize_t bytesSent = sendfile(_clientSocket, _fd, &offset, remainingBytes);
+    if (bytesSent == -1) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            // Handle the case where sendfile would block (non-blocking socket)
+            return CONTINUE;
+        } else {
+            // Handle other errors
+            return ERROR;
+        }
+    } else if (bytesSent == 0 && offset >= _fileSize) {
+        close(_fd);
+        _fd = -1;
+        _offset = 0;
+        return DONE;
+    }
+
+    _offset = offset;
+    if (_offset >= _fileSize) {
+        close(_fd);
+        _fd = -1;
+        _offset = 0;
+        return DONE;
+    }
+    return CONTINUE;
+}
+#endif

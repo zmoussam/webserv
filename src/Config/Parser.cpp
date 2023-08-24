@@ -59,7 +59,7 @@ std::vector<std::string> splitArgs(std::string value)
     size_t quoteStartPos = 0;
     size_t quoteEndPos = value.find('"', quoteStartPos + 1);
     size_t count = std::count(value.begin(), value.end(), ',');
-    while (count >= 0)
+    while (count == 0)
     {
         if (count == 0 && value.find(',', quoteEndPos + 1) != std::string::npos)
             throw std::runtime_error(NOT_VALID);

@@ -111,7 +111,7 @@ int Server::start(void) {
         std::cerr << strerror(errno) << std::endl;
         return ERROR;
     }
-    // std::cout << "Server started on port: " << _port << std::endl;
+    std::cout << "Server started on port: " << _port << std::endl;
 
     return OK;
 }
