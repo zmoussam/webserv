@@ -10,6 +10,10 @@ int main(int ac, char **av) {
     Config config(av[1]);
 
     parsefile(config);
+    if (config._servers.size() == 0) {
+        std::cerr << "Error: no servers found" << std::endl;
+        return ERROR;
+    }
     for (size_t i = 0; i < config._servers.size(); i++) {
         servers.push_back(Server(config._servers[i]));
     }

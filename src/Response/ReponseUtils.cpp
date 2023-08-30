@@ -1,25 +1,29 @@
 # include <string>
 # include "Macros.hpp"
 # include <stdexcept>
-
-std::string constructFilePath(const std::string& requestPath) {
+# include "Config.hpp"
+std::string constructFilePath(const std::string& requestPath, const std::string &root, const std::string &index) {
     std::string pathWithoutQuery = requestPath;
     if (pathWithoutQuery.empty() || pathWithoutQuery[0] != '/') {
-        throw std::invalid_argument("Invalid request path");
+        pathWithoutQuery = "/" + pathWithoutQuery;
     }
     if (!pathWithoutQuery.empty() && pathWithoutQuery[pathWithoutQuery.length() - 1] == '/') {
-        pathWithoutQuery += "index.html";
+        pathWithoutQuery += index;
     }
     // Check if there is no extension by finding the last dot in the string
     else if (pathWithoutQuery.find_last_of('.') == std::string::npos) {
-        pathWithoutQuery += "/index.html";
+        pathWithoutQuery += "/" + index;
     }
 
-    return ROOT_PATH + pathWithoutQuery;
+    std::string filePath = root + pathWithoutQuery;
+    return filePath;
 }
 
 
 std::string getContentType(std::string filename) {
+    if (filename.empty()) {
+        return "text/html";
+    }
 	std::string extension = filename.substr(filename.find_last_of('.'));
 	if (mimeTypes.find(extension) != mimeTypes.end()) {
 		return mimeTypes[extension];

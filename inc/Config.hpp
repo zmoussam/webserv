@@ -50,6 +50,8 @@ class ServerConf {
         std::map<int , std::string> _errorPages;
     public:
         ServerConf();
+        ServerConf(const ServerConf &copy);
+        ServerConf &operator=(const ServerConf &copy);
         ~ServerConf();
         bool getAutoindex() const; // Return value: True || False
         size_t getNum(std::string type) const; // Takes in the Listen and Client_body_size and retruns the value of int type

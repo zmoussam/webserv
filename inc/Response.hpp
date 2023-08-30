@@ -9,21 +9,26 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstdio>
-
+# include "Config.hpp"
 # include "Request.hpp"
 #include "Macros.hpp"
+
 
 class Response
 {
 	public:
 		Response();
 		Response(int clientSocket);
+		Response(int clientSocket, ServerConf &config);
 
 		~Response();
-		void    InitFile(Request &req);
-		void    InitHeaders(Request &req);
-		int	sendResp(Request &req);
-
+		void    	InitFile(Request &req);
+		void    	InitHeaders(Request &req);
+		std::string checkFilePath(Request &req);
+		int		sendError(std::string &root, std::map<int, std::string> &errpages);
+		int		sendResp(Request &req);
+		void	findRouting(Request &req);
+		void	findStatusCode(Request &req);
 		void 	setSocket(int clientSocket) { _clientSocket = clientSocket; }
 		int 	getSocket() const { return _clientSocket; }
 		std::string getBody() const { return _body; }
@@ -31,6 +36,9 @@ class Response
 		void updateDataSent(size_t dataSent) { _dataSent += dataSent; }
 		std::string getFilePath() const { return _filePath; }
 	private:
+		ServerConf _config;
+		Location _location;
+		Request _request;
 		int _clientSocket;
 		int _fd;
 		bool _isCGI;
@@ -40,14 +48,17 @@ class Response
 		bool _headersSent;
 		std::string _protocol;
 		std::string _status_code;
-		std::string _server;
-		std::string _content_type;
-		u_int64_t _content_length;
 		std::string _body;
 		std::map<std::string, std::string> _headers;
 		std::string _filePath;
 		std::string _buffer;
+		int _error;
+		std::string _root;
+		std::string _index;
+		std::vector<std::string> _methods;
+		std::string _returnPath;
+		bool _autoindex;
 };
 
 std::string getContentType(std::string filename);
-std::string constructFilePath(const std::string& requestPath);
+std::string constructFilePath(const std::string& requestPath, const std::string &root, const std::string &index);

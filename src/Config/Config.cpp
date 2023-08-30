@@ -15,6 +15,35 @@ ServerConf::~ServerConf() {}
 Location::Location() {}
 Location::~Location() {}
 
+ServerConf::ServerConf(const ServerConf &copy)
+{
+    // perform a deep copy
+    this->_autoindex = copy._autoindex;
+    this->_bodySize = copy._bodySize;
+    this->_host = copy._host;
+    this->_serverName = copy._serverName;
+    this->_listen = copy._listen;
+    this->_root = copy._root;
+    this->_index = copy._index;
+    this->_errorPages = copy._errorPages;
+    this->location = copy.location;
+}
+
+ServerConf &ServerConf::operator=(const ServerConf &copy)
+{
+    // perform a deep copy
+    this->_autoindex = copy._autoindex;
+    this->_bodySize = copy._bodySize;
+    this->_host = copy._host;
+    this->_serverName = copy._serverName;
+    this->_listen = copy._listen;
+    this->_root = copy._root;
+    this->_index = copy._index;
+    this->_errorPages = copy._errorPages;
+    this->location = copy.location;
+    return *this;
+}
+
 void Location::setMethods(std::vector<std::string> methods)
 {
     this->_methods = methods;

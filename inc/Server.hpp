@@ -10,7 +10,6 @@
 #include <sstream>
 # include <vector>
 
-
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Utils.hpp"
@@ -19,8 +18,6 @@
 
 class Server {
 	private:
-		ServerConf _serverConf;
-		
 		int _port;
 		std::string host;
 		int _serverSocket;
@@ -30,8 +27,8 @@ class Server {
 		std::map<int, Request> _requests;
     	std::map<int, Response> _responses;
 		std::vector<int> _clients;
+		ServerConf &_serverConf;
 	public:
-		Server();
 		Server(ServerConf &serverConf);
 		~Server();
 		Server(const Server& other);
