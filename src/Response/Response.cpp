@@ -1,7 +1,7 @@
 # include "Response.hpp"
 # include <iostream>
 # include <fcntl.h>
-
+#include <sys/stat.h>
 Response::Response()
 	: _protocol(""),
 	_status_code(""),
@@ -49,6 +49,8 @@ Response::Response(int clientSocket, ServerConf &config)
     _headersSent = false;
     _config = config;
     _error = 0;
+    _autoindex = false;
+    _isTextStream = false;
 }
 
 Response::~Response()
@@ -76,34 +78,53 @@ void    Response::findStatusCode(Request &req) {
     }
 }
 
-void Response::findRouting(Request &req) {
+int Response::findRouting(Request &req) {
     std::vector<Location> &locations = _config.location;
 
-    std::cout << "Finding routing" << std::endl;
-
-    _root = _config.getString(ROOT);
-    _index = _config.getString(INDEX);
-    _autoindex = _config.getAutoindex();
-    _filePath = constructFilePath(req.getPath(), _root, _index);
     for (std::vector<Location>::iterator it = locations.begin(); it != locations.end(); it++) {
-        // Check if request path starts with location name, e.g., /location_name/path/to/file
-        // Only check if the location name is at the start of the path
         if (req.getPath().find(it->getLocationName()) == 0) {
+            std::cout << "Found location" << std::endl;
             _root = it->getString(ROOT);
             _index = it->getString(INDEX);
             _autoindex = it->getAutoindex();
             _errorPages = it->getErrorPages();
+            _methods = it->getMethods();
             std::string relativePath = req.getPath().substr(it->getLocationName().length());
-            std::cout << "Relative path: " << relativePath << std::endl;
-            _filePath = constructFilePath(relativePath, _root, _index);
-            std::cout << "Found location" << std::endl;
-            std::cout << "Root: " << _root << std::endl;
-            std::cout << "Index: " << _index << std::endl;
-            std::cout << "Autoindex: " << _autoindex << std::endl;
-
-            return; // Exit the loop if location is found
+            if (_autoindex == true) {
+                _filePath = constructFilePath(relativePath, _root, _index);
+                _isTextStream = false;
+                return CONTINUE;
+            }
+            else {
+                _filePath = constructFilePath(relativePath, _root, "");
+                _isTextStream = false;
+                if (isDirectory(_filePath.c_str())) {
+                    _error = 404;
+                    return _error;
+                }
+            }
+            return CONTINUE;
         }
     }
+    _root = _config.getString(ROOT);
+    _index = _config.getString(INDEX);
+    _autoindex = _config.getAutoindex();
+    _errorPages = _config.getErrorPages();
+    _filePath = constructFilePath(req.getPath(), _root, _index);
+    if (_autoindex == true) {
+        _filePath = constructFilePath(req.getPath(), _root, _index);
+        _isTextStream = false;
+        return CONTINUE;
+    }
+    else {
+        _filePath = constructFilePath(req.getPath(), _root, "");
+        _isTextStream = false;
+        if (isDirectory(_filePath.c_str())) {
+            _error = 404;
+            return _error;
+        }
+    }
+    return CONTINUE;
 }
 
 void    Response::handleDefaultError(Request &req) {
@@ -111,20 +132,13 @@ void    Response::handleDefaultError(Request &req) {
     std::stringstream ss;
     ss << "<center><h1>" << _error << " Error</h1></center>";
     _body = ss.str();
-    _fileSize = _body.length();
+    _fileSize = _body.size();
     _headers["Content-Type"] = "text/html";
     _isTextStream = true;
 }
 
-
-void    Response::InitFile(Request &req) {
-    findRouting(req);
-    
-    std::cout << "File path: " << _filePath << std::endl;
-    _fd = open(_filePath.c_str(), O_RDONLY);
-    std::cout << "FD: " << _fd << std::endl;
-    if (_fd == -1) {
-        _error = 404;
+void    Response::handleError(Request &req) {
+    if (_error == 404) {
         if (_errorPages.empty()) {
             _errorPages = _config.getErrorPages();
             if (_errorPages.empty()) {
@@ -137,6 +151,64 @@ void    Response::InitFile(Request &req) {
         _filePath = constructFilePath(_errorPages[_error], _root, _index);
         std::cout << "Error file path: " << _filePath << std::endl;
         _fd = open(_filePath.c_str(), O_RDONLY);
+    }
+    else if (_error == 501) {
+        if (_errorPages.empty()) {
+            _errorPages = _config.getErrorPages();
+            if (_errorPages.empty()) {
+                handleDefaultError(req);
+                _fileSize = lseek(_fd, 0, SEEK_END);
+                lseek(_fd, 0, SEEK_SET);
+                return ;
+            }
+        }
+        _filePath = constructFilePath(_errorPages[_error], _root, _index);
+        std::cout << "Error file path: " << _filePath << std::endl;
+        _fd = open(_filePath.c_str(), O_RDONLY);
+    }
+    else if (_error == 500) {
+        if (_errorPages.empty()) {
+            _errorPages = _config.getErrorPages();
+            if (_errorPages.empty()) {
+                handleDefaultError(req);
+                _fileSize = lseek(_fd, 0, SEEK_END);
+                lseek(_fd, 0, SEEK_SET);
+                return ;
+            }
+        }
+        _filePath = constructFilePath(_errorPages[_error], _root, _index);
+        std::cout << "Error file path: " << _filePath << std::endl;
+        _fd = open(_filePath.c_str(), O_RDONLY);
+    }
+    else if (_error == 505) {
+        if (_errorPages.empty()) {
+            _errorPages = _config.getErrorPages();
+            if (_errorPages.empty()) {
+                handleDefaultError(req);
+                _fileSize = lseek(_fd, 0, SEEK_END);
+                lseek(_fd, 0, SEEK_SET);
+                return ;
+            }
+        }
+        _filePath = constructFilePath(_errorPages[_error], _root, _index);
+        std::cout << "Error file path: " << _filePath << std::endl;
+        _fd = open(_filePath.c_str(), O_RDONLY);
+    }
+}
+
+void    Response::InitFile(Request &req) {
+    if (findRouting(req) == 404) {
+        handleError(req);
+        if (_fd == -1) {
+            handleDefaultError(req);
+            return ;
+        }
+        return ;
+    }
+    _fd = open(_filePath.c_str(), O_RDONLY);
+    if (_fd == -1) {
+        _error = 404;
+        handleError(req);
         if (_fd == -1) {
            handleDefaultError(req);
            return ;
@@ -147,9 +219,34 @@ void    Response::InitFile(Request &req) {
 }
 
 
+void    Response::checkMethod(Request &req) {
+    std::string const &method = req.getMethod();
+    if (_methods.empty()) {
+        _methods.push_back("GET");
+        _methods.push_back("POST");
+        _methods.push_back("DELETE");
+    }
+    for (std::vector<std::string>::iterator it = _methods.begin(); it != _methods.end(); it++) {
+        if (*it == method)
+            return ;
+    }
+    _error = 501;
+    handleError(req);
+}
+
+void    Response::checkHttpVersion(Request &req) {
+    std::string const &version = req.getHTTPVersion();
+    if (version != "HTTP/1.1") {
+        _error = 505;
+        handleError(req);
+    }
+}
+
 void Response::InitHeaders(Request &req) {
     std::stringstream ss;
-
+    checkHttpVersion(req);
+    checkMethod(req);
+    // checkCGI(req);
     findStatusCode(req);
     _headers["Server"] = "Webserv/1.0";
     if (_headers.find("Content-Type") == _headers.end())
@@ -158,8 +255,6 @@ void Response::InitHeaders(Request &req) {
     _headers["Content-Length"] = ss.str();
     _headers["Connection"] = "keep-alive";
 }
-
-
 
 # ifdef __APPLE__
 int Response::sendFileData() {
@@ -186,13 +281,7 @@ int Response::sendFileData() {
     
     ssize_t bytesSent = sendfile(_clientSocket, _fd, &offset, remainingBytes);
     if (bytesSent == -1) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            // Handle the case where sendfile would block (non-blocking socket)
-            return CONTINUE;
-        } else {
-            // Handle other errors
-            return ERROR;
-        }
+        return ERROR;
     } else if (bytesSent == 0 && offset >= _fileSize) {
         close(_fd);
         _fd = -1;
@@ -217,18 +306,11 @@ int Response::sendTextData() {
     ssize_t bytesSent = send(_clientSocket, body.c_str() + _dataSent, remainingBytes, 0);
     _dataSent += bytesSent;
     if (bytesSent == -1) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            // Handle the case where sendfile would block (non-blocking socket)
-            return CONTINUE;
-        } else {
-            // Handle other errors
-            return ERROR;
-        }
+        return ERROR;
     } else if (bytesSent == 0 && _dataSent >= body.length()) {
         _dataSent = 0;
         return DONE;
     }
-
     _dataSent += bytesSent;
     if (_dataSent >= body.length()) {
         _dataSent = 0;
@@ -253,10 +335,10 @@ int Response::sendResp(Request &req) {
         send(_clientSocket, _buffer.c_str(), _buffer.length(), 0);
         _headersSent = true;
     }
-    if (!_isTextStream)
-        return sendFileData();
-    else 
+    if (_isTextStream)
         return sendTextData();
+    else 
+        return sendFileData();
     
     return CONTINUE;
 }

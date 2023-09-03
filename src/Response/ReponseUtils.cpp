@@ -2,6 +2,8 @@
 # include "Macros.hpp"
 # include <stdexcept>
 # include "Config.hpp"
+# include <sys/stat.h>
+
 std::string constructFilePath(const std::string& requestPath, const std::string &root, const std::string &index) {
     std::string pathWithoutQuery = requestPath;
     if (pathWithoutQuery.empty() || pathWithoutQuery[0] != '/') {
@@ -29,4 +31,14 @@ std::string getContentType(std::string filename) {
 		return mimeTypes[extension];
 	}
 	return "text/html";
+}
+
+bool isDirectory(const char* path) {
+    struct stat fileInfo;
+    
+    if (stat(path, &fileInfo) != 0) {
+        return false;
+    }
+    
+    return S_ISDIR(fileInfo.st_mode);
 }
