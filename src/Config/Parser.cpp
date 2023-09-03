@@ -167,8 +167,8 @@ Location Parser::parseLocationBody()
             location.setErrorPage(parseErrorPage());
         else if (look("autoindex"))
             location.setAutoindex(parseAutoindex());
-        else if ("return")
-            location.setString(REDIRECT, parseStringRules(REDIRECT));
+       else if ("return")
+            location.setReturned(parseStringRules(REDIRECT));
         else
             throw std::runtime_error(UNEXPECTED_TOKEN);
     }
@@ -297,15 +297,16 @@ void Parser::parseToken(Config &config)
     try {
         Tokenizer(this->tokens, config._file);
         parseConfig(config);
-        // for (size_t i = 0; i < config._servers.size(); i++) {
-        //     std::cout << "listen: " << config._servers[i].getNum(LISTEN) << std::endl;
-        //     std::cout << "host: " << config._servers[i].getString(HOST) << std::endl;
-        //     std::cout << "server_name: " << config._servers[i].getString(SERVER_NAME) << std::endl;
-        //     for (size_t j = 0; j < config._servers[i].location.size(); j++) {
-        //         std::cout << "location: " << config._servers[i].location[j].getLocationName() << std::endl;
-        //         std::cout << "root: " << config._servers[i].location[j].getString(ROOT) << std::endl;
-        //     }
-        // }
+        for (size_t i = 0; i < config._servers.size(); i++) {
+            std::cout << "listen: " << config._servers[i].getNum(LISTEN) << std::endl;
+            std::cout << "host: " << config._servers[i].getString(HOST) << std::endl;
+            std::cout << "server_name: " << config._servers[i].getString(SERVER_NAME) << std::endl;
+            for (size_t j = 0; j < config._servers[i].location.size(); j++) {
+                std::cout << "location: " << config._servers[i].location[j].getLocationName() << std::endl;
+                std::cout << "root: " << config._servers[i].location[j].getString(ROOT) << std::endl;
+                std::cout << "returned: " << config._servers[i].location[j].getReturned() << std::endl;
+            }
+        }
     } catch (std::exception &e) {
         std::cout << e.what() << std::endl;
         exit(1);
