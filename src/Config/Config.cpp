@@ -44,6 +44,17 @@ ServerConf &ServerConf::operator=(const ServerConf &copy)
     return *this;
 }
 
+void Location::setReturned(std::string returned)
+{
+    this->_returned = returned;
+}
+
+std::string Location::getReturned() const
+{
+    return this->_returned;
+}
+
+
 void Location::setMethods(std::vector<std::string> methods)
 {
     this->_methods = methods;

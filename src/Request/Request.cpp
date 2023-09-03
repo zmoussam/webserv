@@ -6,7 +6,7 @@
 /*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/03 19:01:37 by aarbaoui         ###   ########.fr       */
+/*   Updated: 2023/09/03 21:42:59 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -330,12 +330,12 @@ void freeBoundaryBody(BoundaryBody *head)
     {
         tmp = head;
         head = head->next;
+        delete tmp;
     }
 }
 Request::~Request()
 {
-    std::cout << "Request destroyed" << std::endl;
-    freeBoundaryBody(_boundaryBody);
+    // freeBoundaryBody(_boundaryBody);
     _headers.clear();
     _queries.clear();
     _cookies.clear();
