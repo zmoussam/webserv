@@ -29,7 +29,7 @@ class Response
 		void		handleDefaultError(Request &req);
 		int		sendError(std::string &root, std::map<int, std::string> &errpages);
 		int		sendResp(Request &req);
-		int	findRouting(Request &req);
+		void	findRouting(Request &req);
 		void	findStatusCode(Request &req);
 		void 	setSocket(int clientSocket) { _clientSocket = clientSocket; }
 		int 	getSocket() const { return _clientSocket; }
@@ -39,9 +39,6 @@ class Response
 		std::string getFilePath() const { return _filePath; }
 		int		sendFileData();
 		int 	sendTextData();
-		void	checkMethod(Request &req);
-		void	checkHttpVersion(Request &req);
-		void	handleError(Request &req);
 	private:
 		ServerConf _config;
 		Location _location;
@@ -67,9 +64,7 @@ class Response
 		bool _autoindex;
 		std::map <int, std::string> _errorPages;
 		bool	_isTextStream;
-		std::string	_redirect;
 };
 
 std::string getContentType(std::string filename);
 std::string constructFilePath(const std::string& requestPath, const std::string &root, const std::string &index);
-bool isDirectory(const char* path);

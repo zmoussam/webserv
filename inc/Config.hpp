@@ -75,7 +75,6 @@ class Location: public ServerConf {
         ~Location();
         std::string getLocationName() const;
         std::vector<std::string> getMethods() const;
-        std::string getReturned() const;
         void setReturned(std::string returned);
         void setLocationName(std::string location_name);
         void setMethods(std::vector<std::string> methods);

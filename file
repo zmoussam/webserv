@@ -1,0 +1,45 @@
+Server started on port: 9000
+Server started on port: 9001
+Request destroyed
+Request destroyed
+$Content-Disposition$ : $form-data; name="dsfef"; filename="dd.png"$
+$Content-Type$ : $image/png$
+$Content-Disposition$ : $form-data; name="ertgrtgrwefefsdf"$
+Finding routing
+File path: ./www/index.html
+FD: 6
+Request destroyed
+Request destroyed
+Request destroyed
+Request destroyed
+$Content-Disposition$ : $form-data; name="dsfef"; filename="dd.png"$
+$Content-Type$ : $image/png$
+$Content-Disposition$ : $form-data; name="ertgrtgrwefefsdf"$
+Finding routing
+File path: ./www/index.html
+FD: 6
+Request destroyed
+Request destroyed
+Request destroyed
+Request destroyed
+$Content-Disposition$ : $form-data; name="dsfef"; filename=""$
+Failed to open the file!
+$Content-Disposition$ : $form-data; name="ertgrtgrwefefsdf"$
+Finding routing
+File path: ./www/index.html
+FD: 6
+Request destroyed
+Request destroyed
+Request destroyed
+Request destroyed
+$Content-Disposition$ : $form-data; name="dsfef"; filename="Screen Shot 2023-08-09 at 11.16.16 PM.png"$
+$Content-Type$ : $image/png$
+$Content-Disposition$ : $form-data; name="ertgrtgrwefefsdf"; filename="dd.png"$
+$Content-Type$ : $image/png$
+$Content-Disposition$ : $form-data; name="sds"; filename=""$
+Failed to open the file!
+Finding routing
+File path: ./www/index.html
+FD: 6
+Request destroyed
+Request destroyed

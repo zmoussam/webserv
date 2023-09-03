@@ -68,16 +68,6 @@ void ServerConf::setAutoindex(bool autoindex)
     this->_autoindex = autoindex;
 }
 
-void Location::setReturned(std::string returned)
-{
-    this->_returned = returned;
-}
-
-std::string Location::getReturned() const
-{
-    return this->_returned;
-}
-
 void Location::setLocationName(std::string locationName)
 {
     this->_locationName = locationName;

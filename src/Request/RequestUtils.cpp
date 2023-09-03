@@ -1,5 +1,29 @@
 #include "Request.hpp"
 
+Request::Request(const Request & other) {
+    // perform deep copy
+    *this = other;
+}
+Request &Request::operator=(const Request & other) {
+    if (this != &other) {
+        this->_REQ.str(other._REQ.str());
+        this->_request = other._request;
+        this->_requestLength = other._requestLength;
+        this->_httpVersion = other._httpVersion;
+        this->_body = other._body;
+        this->_URI = other._URI;
+        this->_method = other._method;
+        this->_queries = other._queries;
+        this->_headers = other._headers;
+        this->_cookies = other._cookies;
+        this->_keepAlive = other._keepAlive;
+        this->_isHeadersRead = other._isHeadersRead;
+        this->_clientSocket = other._clientSocket;
+        this->_isBodyRead = other._isBodyRead;
+        this->_checkBoundary = other._checkBoundary;
+    }
+    return *this;
+}
 
 std::string Request::getFullRequest() const
 {
@@ -77,10 +101,4 @@ int hexStringToInt(const std::string hexString) {
     int intValue;
     converter >> std::hex >> intValue;
     return intValue;
-}
-
-BoundaryBody::BoundaryBody()
-{
-    this->_boundary = "";
-    this->_bodysCount = 0;
 }

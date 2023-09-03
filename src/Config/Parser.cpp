@@ -167,8 +167,8 @@ Location Parser::parseLocationBody()
             location.setErrorPage(parseErrorPage());
         else if (look("autoindex"))
             location.setAutoindex(parseAutoindex());
-       else if ("return")
-            location.setReturned(parseStringRules(REDIRECT));
+        else if ("return")
+            location.setString(REDIRECT, parseStringRules(REDIRECT));
         else
             throw std::runtime_error(UNEXPECTED_TOKEN);
     }
@@ -304,7 +304,6 @@ void Parser::parseToken(Config &config)
         //     for (size_t j = 0; j < config._servers[i].location.size(); j++) {
         //         std::cout << "location: " << config._servers[i].location[j].getLocationName() << std::endl;
         //         std::cout << "root: " << config._servers[i].location[j].getString(ROOT) << std::endl;
-        //         std::cout << "returned: " << config._servers[i].location[j].getReturned() << std::endl;
         //     }
         // }
     } catch (std::exception &e) {

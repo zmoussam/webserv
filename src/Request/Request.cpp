@@ -3,15 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/08/24 12:08:19 by aarbaoui         ###   ########.fr       */
+/*   Updated: 2023/09/03 18:14:18 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
-
+#include <fstream>
 int Request::waitForBody(size_t headerlength)
 {
     size_t bodyLengthPos = _REQ.str().find("Content-Length");
@@ -81,7 +81,7 @@ int Request::handleRequest() {
 	}
 	if (rcvRes == DONE && _isBodyRead) {
 		parsseRequest();
-	    std::cout << " - - " << "\"" << _method << " " << _URI << " " << _httpVersion << "\"" << std::endl;
+	    // std::cout << " - - " << "\"" << _method << " " << _URI << " " << _httpVersion << "\"" << std::endl;
         // std::cout << _request << std::endl;
 	}
 	return (0);
@@ -96,7 +96,8 @@ Request::Request(int clientSocket) 	:
 	_URI(""),
     _method(""),
 	_queries(),
-    _boundaryBody(),
+    _boundary(""),
+    _boundaryBody(NULL),
 	_headers(),
 	_cookies(),
 	_keepAlive(1),
@@ -116,7 +117,8 @@ Request::Request() :
     _URI(""),
     _method(""),
     _queries(),
-    _boundaryBody(),
+    _boundary(""),
+    _boundaryBody(NULL),
     _headers(),
     _cookies(),
     _keepAlive(1),
@@ -220,45 +222,84 @@ void Request::parsseCookies()
         _headers.erase("Cookies");
     }
 }
+size_t Request::countboundary(size_t pos)
+{
+    size_t count = 0;
+    while ((pos = _request.find(_boundary, pos)) != std::string::npos)
+    {
+        count++;
+        pos += _boundary.length();
+    }
+    return count;
+}
+std::map<std::string, std::string> getboundaryHeaders(std::string headers)
+{
+    // std::cout << "headers : " << headers << std::endl;
+    std::map<std::string, std::string> _headers;
+    std::string _key;
+    size_t _headerkeyPos;
+    size_t _headerValuePos;
+    size_t _hpos = 0;
+    while (_hpos < headers.size())
+    {
+        _headerkeyPos = headers.find(':', _hpos);
+        if (_headerkeyPos == std::string::npos)
+            break;
+        _key = headers.substr(_hpos, _headerkeyPos - _hpos);
+        if ((_headerValuePos = headers.find("\r\n", _headerkeyPos)) == std::string::npos)
+            return _headers;
+        _headers[_key] = headers.substr(_headerkeyPos + 2, _headerValuePos - _headerkeyPos - 2);
+        _hpos = _headerValuePos + 2;
+        std::cout << '$' << _key << "$ : " << '$' << _headers[_key]  << "$" << std::endl;
+    }
+    return _headers;
+}
+
 void Request::parsseBody(size_t &_bodyPos)
 {
     if (_headers.find("Content-Length") != _headers.end())
     {
-        // if(_headers.find("Content-Type") != _headers.end() 
-        // && _headers["Content-Type"].find("multipart/form-data") != std::string::npos
-        // && _headers["Content-Type"].find("boundary") != std::string::npos)
-        // {
-        //     std::map<std::string, std::string> tmp;
-        //     _checkBoundary = true;
-        //     std::string boundary;
-        //     size_t bodyLength = std::atoi(_headers["Content-Length"].c_str());
-        //     boundary = _headers["Content-Type"].substr(_headers["Content-Type"].find("boundary") + 9);
-        //     for (size_t i = 0; i < bodyLength; i++)
-        //     { 
-        //         size_t nextBodyPos = _request.find(boundary, i);
-        //         if (nextBodyPos != std::string::npos)
-        //         {
-        //             std::string tmpBody = _request.substr(i, nextBodyPos - i);
-        //             size_t headerPos = tmpBody.find("\r\n\r\n");
-        //             if (headerPos != std::string::npos)
-        //             {
-        //                 std::string header = tmpBody.substr(0, headerPos);
-        //                 size_t keyPos = header.find("name=\"");
-        //                 if (keyPos != std::string::npos)
-        //                 {
-        //                     std::string key = header.substr(keyPos + 6);
-        //                     key = key.substr(0, key.find("\""));
-        //                     tmp[key] = tmpBody.substr(headerPos + 4);
-        //                 }
-        //             }
-        //             i = nextBodyPos + boundary.size() - 1;
-        //         }
-        //     }
-            
-        //     // Todo : handle the boundary
-        //     // check if the body is a file or not and handle the boundary
-        // }
-        // else
+        if(_headers.find("Content-Type") != _headers.end() 
+        && _headers["Content-Type"].find("multipart/form-data") != std::string::npos
+        && _headers["Content-Type"].find("boundary") != std::string::npos)
+        {
+            _boundary = "--" + _headers["Content-Type"].substr(_headers["Content-Type"].find("boundary") + 9);
+            size_t bodyCount = countboundary(_bodyPos);
+            _bodyPos += 4 + _boundary.length() + 2;
+            BoundaryBody *headBoundaryBody = new BoundaryBody;
+            _boundaryBody = headBoundaryBody;
+            while (bodyCount > 1 && headBoundaryBody != NULL)
+            {
+                std::string tmpbody = _request.substr(_bodyPos, _request.find(_boundary, _bodyPos) - _bodyPos);
+                headBoundaryBody->_body = tmpbody.substr(tmpbody.find("\r\n\r\n") + 4);
+                headBoundaryBody->headers = getboundaryHeaders(tmpbody.substr(0, tmpbody.find("\r\n\r\n") + 4));
+                if (bodyCount > 2)
+                    headBoundaryBody->next = new BoundaryBody;
+                else 
+                    headBoundaryBody->next = NULL;
+                size_t filenamePos = headBoundaryBody->headers["Content-Disposition"].find("filename");
+                if (filenamePos == std::string::npos)
+                {
+                    headBoundaryBody->filename = "";
+                    headBoundaryBody->_isFile = false;
+                }
+                else 
+                {
+                    headBoundaryBody->filename = headBoundaryBody->headers["Content-Disposition"].substr(filenamePos + 10, headBoundaryBody->headers["Content-Disposition"].length() - filenamePos - 11);
+                    headBoundaryBody->_isFile = true;
+                    std::ofstream file("upload/" + headBoundaryBody->filename);
+                    if (!file) {
+                        std::cout << "Failed to open the file!" << std::endl;
+                    }
+                    file << headBoundaryBody->_body;
+                    file.close();
+                }
+                bodyCount--;
+                headBoundaryBody = headBoundaryBody->next;
+                _bodyPos += tmpbody.length() + _boundary.length() + 2;
+            }
+        } 
+        else
         _body = _request.substr(_bodyPos + 4 , std::atoi(_headers["Content-Length"].c_str()));
     }
     else if (_headers.find("Transfer-Encoding") != _headers.end() \
@@ -282,9 +323,20 @@ void Request::parsseBody(size_t &_bodyPos)
     }
     // std::cout << _body << std::endl;
 }
-
+void freeBoundaryBody(BoundaryBody *head)
+{
+    BoundaryBody *tmp;
+    while (head != NULL)
+    {
+        tmp = head;
+        head = head->next;
+        delete tmp;
+    }
+}
 Request::~Request()
 {
+    std::cout << "Request destroyed" << std::endl;
+    freeBoundaryBody(_boundaryBody);
     _headers.clear();
     _queries.clear();
     _cookies.clear();
