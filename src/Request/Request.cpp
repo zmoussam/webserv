@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/03 18:14:18 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/09/03 19:01:37 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -287,7 +287,7 @@ void Request::parsseBody(size_t &_bodyPos)
                 {
                     headBoundaryBody->filename = headBoundaryBody->headers["Content-Disposition"].substr(filenamePos + 10, headBoundaryBody->headers["Content-Disposition"].length() - filenamePos - 11);
                     headBoundaryBody->_isFile = true;
-                    std::ofstream file("upload/" + headBoundaryBody->filename);
+                    std::ofstream file(("upload/" + headBoundaryBody->filename).c_str());
                     if (!file) {
                         std::cout << "Failed to open the file!" << std::endl;
                     }
@@ -330,7 +330,6 @@ void freeBoundaryBody(BoundaryBody *head)
     {
         tmp = head;
         head = head->next;
-        delete tmp;
     }
 }
 Request::~Request()
