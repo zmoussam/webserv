@@ -13,6 +13,7 @@
 # include "Request.hpp"
 #include "Macros.hpp"
 
+# define ERROR_404 "<h1>404 Not Found</h1>"
 
 class Response
 {
@@ -25,6 +26,7 @@ class Response
 		void    	InitFile(Request &req);
 		void    	InitHeaders(Request &req);
 		std::string checkFilePath(Request &req);
+		void		handleDefaultError(Request &req);
 		int		sendError(std::string &root, std::map<int, std::string> &errpages);
 		int		sendResp(Request &req);
 		void	findRouting(Request &req);
@@ -35,6 +37,8 @@ class Response
 		size_t getDataSent() const { return _dataSent; }
 		void updateDataSent(size_t dataSent) { _dataSent += dataSent; }
 		std::string getFilePath() const { return _filePath; }
+		int		sendFileData();
+		int 	sendTextData();
 	private:
 		ServerConf _config;
 		Location _location;
@@ -58,6 +62,8 @@ class Response
 		std::vector<std::string> _methods;
 		std::string _returnPath;
 		bool _autoindex;
+		std::map <int, std::string> _errorPages;
+		bool	_isTextStream;
 };
 
 std::string getContentType(std::string filename);
