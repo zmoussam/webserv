@@ -51,6 +51,7 @@ Response::Response(int clientSocket, ServerConf &config)
     _error = 0;
     _autoindex = false;
     _isTextStream = false;
+    _redirect = "";
 }
 
 Response::~Response()
@@ -73,6 +74,9 @@ void    Response::findStatusCode(Request &req) {
         case 505:
             _status_code = "505 HTTP Version Not Supported";
             break;
+        case 302:
+            _status_code = "302 Moved Permanently";
+            break;
         default:
             break;
     }
@@ -89,6 +93,11 @@ int Response::findRouting(Request &req) {
             _autoindex = it->getAutoindex();
             _errorPages = it->getErrorPages();
             _methods = it->getMethods();
+            _redirect = it->getReturned();
+            if (_redirect.empty() == false) {
+                _error = 302;
+                return _error;
+            }
             std::string relativePath = req.getPath().substr(it->getLocationName().length());
             if (_autoindex == true) {
                 _filePath = constructFilePath(relativePath, _root, _index);
@@ -138,6 +147,11 @@ void    Response::handleDefaultError(Request &req) {
 }
 
 void    Response::handleError(Request &req) {
+    if (_error == 302) {
+        _fileSize = 0;
+        _isTextStream = true;
+        return ;
+    }
     if (_error == 404) {
         if (_errorPages.empty()) {
             _errorPages = _config.getErrorPages();
@@ -152,6 +166,7 @@ void    Response::handleError(Request &req) {
         std::cout << "Error file path: " << _filePath << std::endl;
         _fd = open(_filePath.c_str(), O_RDONLY);
     }
+    
     else if (_error == 501) {
         if (_errorPages.empty()) {
             _errorPages = _config.getErrorPages();
@@ -197,12 +212,17 @@ void    Response::handleError(Request &req) {
 }
 
 void    Response::InitFile(Request &req) {
-    if (findRouting(req) == 404) {
+    int routing = findRouting(req);
+    if (routing == 404) {
         handleError(req);
         if (_fd == -1) {
             handleDefaultError(req);
             return ;
         }
+        return ;
+    }
+    else if (routing == 302) {
+        handleError(req);
         return ;
     }
     _fd = open(_filePath.c_str(), O_RDONLY);
@@ -251,6 +271,9 @@ void Response::InitHeaders(Request &req) {
     _headers["Server"] = "Webserv/1.0";
     if (_headers.find("Content-Type") == _headers.end())
         _headers["Content-Type"] = getContentType(_filePath);
+    if (!_redirect.empty()) {
+        _headers["Location"] = _redirect;
+    }
     ss << _fileSize;
     _headers["Content-Length"] = ss.str();
     _headers["Connection"] = "keep-alive";

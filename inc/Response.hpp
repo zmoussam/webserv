@@ -67,6 +67,7 @@ class Response
 		bool _autoindex;
 		std::map <int, std::string> _errorPages;
 		bool	_isTextStream;
+		std::string	_redirect;
 };
 
 std::string getContentType(std::string filename);
