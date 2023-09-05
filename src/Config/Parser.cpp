@@ -168,7 +168,7 @@ Location Parser::parseLocationBody()
         else if (look("autoindex"))
             location.setAutoindex(parseAutoindex());
         else if ("return")
-            location.setString(REDIRECT, parseStringRules(REDIRECT));
+            location.setReturned(parseStringRules(REDIRECT));
         else
             throw std::runtime_error(UNEXPECTED_TOKEN);
     }

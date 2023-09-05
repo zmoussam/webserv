@@ -6,7 +6,7 @@
 /*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/04 14:18:36 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/09/05 15:31:57 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -385,7 +385,7 @@ void freeBoundaryBody(BoundaryBody *head)
 Request::~Request()
 {
     // std::cout << "Request destroyed" << std::endl;
-    freeBoundaryBody(_boundaryBody);
+    // freeBoundaryBody(_boundaryBody);
     _headers.clear();
     _queries.clear();
     _cookies.clear();
