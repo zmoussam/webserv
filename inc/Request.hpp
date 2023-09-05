@@ -6,7 +6,7 @@
 /*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/03 17:03:20 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/09/04 14:19:07 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,7 +74,10 @@ class Request
         void parsseHTTPversion(size_t &httpVersion_pos);
         void parsseHeaders(size_t &header_pos);
         void parsseBody(size_t &bodyPos);
-        size_t countboundary(size_t _bodyPos);
+        void getChunkedBody(size_t &_bodyPos);
+        void getBoundaries(size_t &_bodyPos);
+        size_t countboundaries(size_t _bodyPos);
+        void creatUploadFile(BoundaryBody *headBoundaryBody);
         void parsseCookies();
         Request();
         Request(int clientSocket);

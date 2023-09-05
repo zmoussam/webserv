@@ -1,12 +1,10 @@
 #include "Request.hpp"
 
 Request::Request(const Request & other) {
-    // perform deep copy
     *this = other;
 }
 Request &Request::operator=(const Request & other) {
     if (this != &other) {
-        this->_REQ.str(other._REQ.str());
         this->_request = other._request;
         this->_requestLength = other._requestLength;
         this->_httpVersion = other._httpVersion;
@@ -14,6 +12,8 @@ Request &Request::operator=(const Request & other) {
         this->_URI = other._URI;
         this->_method = other._method;
         this->_queries = other._queries;
+        this->_boundary = other._boundary;
+        this->_boundaryBody = other._boundaryBody;
         this->_headers = other._headers;
         this->_cookies = other._cookies;
         this->_keepAlive = other._keepAlive;
@@ -21,6 +21,7 @@ Request &Request::operator=(const Request & other) {
         this->_clientSocket = other._clientSocket;
         this->_isBodyRead = other._isBodyRead;
         this->_checkBoundary = other._checkBoundary;
+        this->_REQ.write(other._REQ.str().c_str(), other._REQ.str().size());
     }
     return *this;
 }
@@ -85,7 +86,6 @@ bool Request::isBodyRead() const {
 
 size_t getBodyLength(std::string Content_length)
 {
-    // std::cout << "Content_length: [" << Content_length <<  "]"<< std::endl;
     std::string bodylength = "";
     int i = 0;
     while (Content_length[i] != '\r' && std::isdigit(Content_length[i]))
