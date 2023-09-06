@@ -1,4 +1,5 @@
 # include "Server.hpp"
+# include "CGIHandler.hpp"
 # include <poll.h>
 # include <map>
 # include <ctime>
@@ -127,7 +128,16 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
             }
         }
         if (FD_ISSET(clientSocket, &writeSet) && _requests[clientSocket].isHeadersRead() && _requests[clientSocket].isBodyRead()) {
-            int res = _responses[clientSocket].sendResp(_requests[clientSocket]);
+            int res;
+            if (_requests[clientSocket].getPath().find(".py") != std::string::npos) {
+                CGI cgi;
+                res = cgi.CGIHandler(_requests[clientSocket], _responses[clientSocket], clientSocket);
+                res = DONE;
+            }
+            else
+            {
+                res = _responses[clientSocket].sendResp(_requests[clientSocket]);
+            }
             if (res == DONE) {
                 FD_CLR(clientSocket, &masterSet);
                 close(clientSocket);

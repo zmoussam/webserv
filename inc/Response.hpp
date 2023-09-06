@@ -29,7 +29,7 @@ class Response
 		void		handleDefaultError(Request &req);
 		int		sendError(std::string &root, std::map<int, std::string> &errpages);
 		int		sendResp(Request &req);
-		int	findRouting(Request &req);
+		int		findRouting(Request &req);
 		void	findStatusCode(Request &req);
 		void 	setSocket(int clientSocket) { _clientSocket = clientSocket; }
 		int 	getSocket() const { return _clientSocket; }
@@ -42,8 +42,10 @@ class Response
 		void	checkMethod(Request &req);
 		void	checkHttpVersion(Request &req);
 		void	handleError(Request &req);
-	private:
+		std::string _root;
+		std::string _index;
 		ServerConf _config;
+	private:
 		Location _location;
 		Request _request;
 		int _clientSocket;
@@ -60,8 +62,6 @@ class Response
 		std::string _filePath;
 		std::string _buffer;
 		int _error;
-		std::string _root;
-		std::string _index;
 		std::vector<std::string> _methods;
 		std::string _returnPath;
 		bool _autoindex;

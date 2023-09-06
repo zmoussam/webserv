@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lsabik <lsabik@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/05 15:31:57 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/09/06 16:31:24 by lsabik           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -370,7 +370,7 @@ void Request::parsseBody(size_t &_bodyPos)
     {
         getChunkedBody(_bodyPos);
     }
-    // std::cout << _body << std::endl;
+    // std::cout <<_body << std::endl;
 }
 void freeBoundaryBody(BoundaryBody *head)
 {
