@@ -41,7 +41,11 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
       _autoindex = it->getAutoindex();
       _redirect = it->getReturned();
       _methods = it->getMethods();
-      _root = it->getString(ROOT);
+      if (!it->getString(ROOT).empty())
+        _root = it->getString(ROOT);
+      if (it->getCompiler().empty())
+        throw 404;
+      _compiler = it->getCompiler();
       break;
     }
     it++;
@@ -55,25 +59,27 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
   }
   if (it_meth == _methods.end())
     throw 405;
-  std::string command = "/usr/bin/python3 " + _root + file;
+  std::string command = _compiler + _root + file;
   std::string filexec = _root + _cgi_path.substr(_cgi_path.find_last_of('/') + 1);
   std::string tmpfile = std::to_string(getpid()) + ".txt";
   pid = fork();
   if (pid == 0) {
     if (req.getMethod() == "POST")
     {
-        std::string body = req.getBody().substr(req.getBody().find_last_of("=") + 1);
-        int fd = ::open(tmpfile.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777);
-        if (fd != -1) {
-          ssize_t bytesWritten = ::write(fd, body.c_str(), body.size());
-          dup2(fd, STDIN_FILENO);
-          ::close(fd);
-          if (!(bytesWritten == static_cast<ssize_t>(body.size()))) {
-              throw std::runtime_error("write() failed!");
-          }
-      }
+        std::string body = req.getBody();
+        std::ofstream ofs(tmpfile);
+				if (!ofs.is_open())
+					throw 503;
+				ofs << body;
+				ofs.close();
+				int fdf = open(tmpfile.c_str(), O_RDWR);
+				if (fdf == -1)
+					throw 503;
+				if (dup2(fdf, STDIN_FILENO) == -1)
+					throw 503;
+				close(fdf);
       if (req.getHeaders().find("Content-Length") != req.getHeaders().end())
-        setenv("CONTENT_LENGTH", std::to_string(body.size()).c_str(), 1);
+        setenv("CONTENT_LENGTH", req.getHeaders()["Content-Length"].c_str(), 1);
     }
     setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
     setenv("REQUEST_URI", req.getPath().c_str(), 1);
@@ -99,7 +105,6 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
     ssize_t bytesSent = send(clientSocket, bodyResp.c_str(), strlen(bodyResp.c_str()), 0);
     if (bytesSent == -1)
       throw 503;
-    unlink(tmpfile.c_str());
     exit(0);
   }
   else

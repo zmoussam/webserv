@@ -6,7 +6,7 @@
 /*   By: lsabik <lsabik@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/05 21:46:08 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/06 16:31:24 by lsabik           ###   ########.fr       */
+/*   Updated: 2023/09/06 18:36:16 by lsabik           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,7 +89,7 @@ int Request::handleRequest() {
     // if the request is received and the body is read
 	if (rcvRes == DONE && _isBodyRead) {
 		parsseRequest(); // parse the request received from the client and fill the request object
-        std::cout << _request << std::endl;
+        // std::cout << _request << std::endl;
 	}
 	return (0);
 }

@@ -1,14 +1,14 @@
 # include "Server.hpp"
 # include "Config.hpp"
-
-int main(int ac, char **av) {
+# include "gl.hpp"
+int main(int ac, char **av, char **env) {
     if (ac != 2) {
         std::cerr << "Error: wrong number of arguments" << std::endl;
         return ERROR;
     }
     std::vector<Server> servers;
     Config config(av[1]);
-
+    envi = env;
     parsefile(config);
     if (config._servers.size() == 0) {
         std::cerr << "Error: no servers found" << std::endl;

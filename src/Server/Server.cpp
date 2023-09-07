@@ -4,6 +4,7 @@
 # include <map>
 # include <ctime>
 # include <fcntl.h>
+
 std::map<std::string, std::string> mimeTypes = getMimeTypes();
 
 /**
@@ -131,8 +132,13 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
             int res;
             if (_requests[clientSocket].getPath().find(".py") != std::string::npos) {
                 CGI cgi;
+                try {
                 res = cgi.CGIHandler(_requests[clientSocket], _responses[clientSocket], clientSocket);
-                res = DONE;
+                }
+               catch(std::exception &e) {
+                    std::cout << e.what() << std::endl;
+                    res = 0;
+                }
             }
             else
             {

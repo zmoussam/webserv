@@ -29,6 +29,7 @@ class Server {
 		std::vector<int> _clients;
 		ServerConf &_serverConf;
 	public:
+	char **envi;
 		Server(ServerConf &serverConf);
 		~Server();
 		Server(const Server& other);

@@ -16,5 +16,6 @@ class CGI {
         std::string _redirect;
         std::string _cgi_path;
         std::string _root;
+        std::string _compiler;
         std::vector<std::string> _methods;
 };

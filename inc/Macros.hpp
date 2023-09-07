@@ -1,5 +1,22 @@
 #pragma once
 
+#define CONF_FILE "configs/file_config.conf"
+#define NOT_VALID "not a valid line"
+#define FAIL_OPEN "Failed to open the input file."
+#define UNEXPECTED_TOKEN "Unexpected token"
+#define LISTEN "listen"
+#define SERVER_NAME "server_name"
+#define ERROR_PAGE "error_page"
+#define ROOT "root"
+#define LOCATION "location"
+#define AUTO_INDEX "autoindex"
+#define ALLOW_METHODS "allow_methods"
+#define INDEX "index"
+#define HOST "host"
+#define BODY_SIZE "client_body_size"
+#define AUTO_INDEX "autoindex"
+#define REDIRECT "return"
+#define COMPILER "compiler"
 
 #define unused(x) (void)(x)
 #define ERROR -1

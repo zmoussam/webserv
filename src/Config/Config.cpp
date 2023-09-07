@@ -17,7 +17,6 @@ Location::~Location() {}
 
 ServerConf::ServerConf(const ServerConf &copy)
 {
-    // perform a deep copy
     this->_autoindex = copy._autoindex;
     this->_bodySize = copy._bodySize;
     this->_host = copy._host;
@@ -31,7 +30,6 @@ ServerConf::ServerConf(const ServerConf &copy)
 
 ServerConf &ServerConf::operator=(const ServerConf &copy)
 {
-    // perform a deep copy
     this->_autoindex = copy._autoindex;
     this->_bodySize = copy._bodySize;
     this->_host = copy._host;
@@ -47,6 +45,16 @@ ServerConf &ServerConf::operator=(const ServerConf &copy)
 void Location::setReturned(std::string returned)
 {
     this->_returned = returned;
+}
+
+void Location::setCompiler(std::string compiler)
+{
+    this->_compiler = compiler + " ";
+}
+
+std::string Location::getCompiler() const
+{
+    return this->_compiler;
 }
 
 std::string Location::getReturned() const
