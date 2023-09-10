@@ -10,9 +10,19 @@ ServerConf::ServerConf() {
     this->_autoindex = false;
     this->_bodySize = 100000;
     this->_host = "127.0.0.1";
+    this->_serverName = "";
+    this->_listen = 0;
+    this->_root = "";
+    this->_index = "";
+    this->_errorPages = std::map<int , std::string>();
 }
 ServerConf::~ServerConf() {}
-Location::Location() {}
+Location::Location() {
+    this->_locationName = "";
+    this->_returned = "";
+    this->_methods = std::vector<std::string>();
+    this->_compiler = "";
+}
 Location::~Location() {}
 
 ServerConf::ServerConf(const ServerConf &copy)

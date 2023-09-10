@@ -47,9 +47,3 @@ int main(int ac, char **av) {
         }
     }
 }
-/*
-localhsot   google
-8080        8080 
-8000 
-8001 8001
-*/
