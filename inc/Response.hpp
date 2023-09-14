@@ -12,17 +12,19 @@
 # include "Config.hpp"
 # include "Request.hpp"
 #include "Macros.hpp"
+#include "CGIHandler.hpp"
 
 # define ERROR_404 "<h1>404 Not Found</h1>"
 
+class CGI;
 class Response
 {
 	public:
 		Response();
 		Response(int clientSocket);
 		Response(int clientSocket, ServerConf &config);
-
 		~Response();
+
 		void    	InitFile(Request &req);
 		void    	InitHeaders(Request &req);
 		std::string checkFilePath(Request &req);
@@ -42,6 +44,7 @@ class Response
 		void	checkMethod(Request &req);
 		void	checkHttpVersion(Request &req);
 		void	handleError(Request &req);
+		void	genListing();
 		std::string _root;
 		std::string _index;
 		ServerConf _config;

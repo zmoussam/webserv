@@ -130,8 +130,8 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
         }
         if (FD_ISSET(clientSocket, &writeSet) && _requests[clientSocket].isHeadersRead() && _requests[clientSocket].isBodyRead()) {
             int res;
+            CGI cgi;
             if (_requests[clientSocket].getPath().find(".py") != std::string::npos) {
-                CGI cgi;
                 try {
                 res = cgi.CGIHandler(_requests[clientSocket], _responses[clientSocket], clientSocket);
                 }
@@ -142,7 +142,7 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
             }
             else
             {
-                res = _responses[clientSocket].sendResp(_requests[clientSocket]);
+                    res = _responses[clientSocket].sendResp(_requests[clientSocket]);
             }
             if (res == DONE) {
                 FD_CLR(clientSocket, &masterSet);

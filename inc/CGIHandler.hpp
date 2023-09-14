@@ -2,6 +2,9 @@
 #include "Request.hpp"
 #include "Response.hpp"
 
+class Response;
+class Request;
+
 class CGI {
     public:
         CGI();
