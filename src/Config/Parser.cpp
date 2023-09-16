@@ -205,6 +205,10 @@ ServerConf Parser::parseServerBody() {
             server.setErrorPage(parseErrorPage());
         else if (look("autoindex"))
             server.setAutoindex(parseAutoindex());
+        else if (look("allow_methods"))
+        {
+            server.setMethods(parseMethods());
+        }
         else if (look("location"))
             server.location.push_back(parseLocation());
         else
@@ -312,18 +316,19 @@ void Parser::parseToken(Config &config)
             config._serversByPort[config._servers[i].getNum(LISTEN)].push_back(config._servers[i]);
         }
         //print to test ou sf
-    //     for (std::map<int , std::vector<ServerConf> >::iterator it = config._serversByPort.begin(); it != config._serversByPort.end(); it++) {
-    //         std::cout << "Port: " << it->first << std::endl;
-    //         std::vector<ServerConf>& servers = it->second;
+        // for (std::map<int , std::vector<ServerConf> >::iterator it = config._serversByPort.begin(); it != config._serversByPort.end(); it++) {
+        //     std::cout << "Port: " << it->first << std::endl;
+        //     std::vector<ServerConf>& servers = it->second;
 
-    //     for (size_t i = 0; i < servers.size(); ++i) {
-    //         ServerConf& server = servers[i];
-    //         std::cout << "Listen: " << server.getNum(LISTEN) << std::endl;
-    //         std::cout << "Host: " << server.getString(HOST) << std::endl;
-    //         std::cout << "Server Name: " << server.getString(SERVER_NAME) << std::endl;
+        // for (size_t i = 0; i < servers.size(); ++i) {
+        //     ServerConf& server = servers[i];
+        //     std::cout << "Listen: " << server.getNum(LISTEN) << std::endl;
+        //     std::cout << "Host: " << server.getString(HOST) << std::endl;
+        //     std::cout << "Server Name: " << server.getString(SERVER_NAME) << std::endl;
+        //     std::cout << "allow_methods: " << server.getErrorPages()[404] << std::endl;
 
-    //         std::cout << "*****************"<< i<<"*******************" << std::endl;
-    //     }
+        //     std::cout << "*****************"<< i<<"*******************" << std::endl;
+        // }
     // }
         // for (size_t i = 0; i < config._servers.size(); i++) {
         //     std::cout << "listen: " << config._servers[i].getNum(LISTEN) << std::endl;

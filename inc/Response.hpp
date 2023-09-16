@@ -22,7 +22,7 @@ class Response
 	public:
 		Response();
 		Response(int clientSocket);
-		Response(int clientSocket, ServerConf &config);
+		Response(int clientSocket, std::vector<ServerConf> &servers);
 		~Response();
 
 		void    	InitFile(Request &req);
@@ -50,6 +50,7 @@ class Response
 		std::string _index;
 		ServerConf _config;
 	private:
+		std::vector<ServerConf> _servers;
 		Location _location;
 		Request _request;
 		int _clientSocket;

@@ -27,10 +27,10 @@ class Server {
 		std::map<int, Request> _requests;
     	std::map<int, Response> _responses;
 		std::vector<int> _clients;
-		ServerConf &_serverConf;
+		std::vector<ServerConf> _serverConf;
 	public:
 	char **envi;
-		Server(ServerConf &serverConf);
+		Server(int port, std::vector<ServerConf> &servers);
 		~Server();
 		Server(const Server& other);
 		Server& operator=(const Server& other);

@@ -13,10 +13,11 @@ int main(int ac, char **av) {
         std::cerr << "Error: no servers found" << std::endl;
         return ERROR;
     }
-    for (size_t i = 0; i < config._servers.size(); i++) {
-        servers.push_back(Server(config._servers[i]));
-    }
 
+    // iteratore over servers
+    for (std::map<int , std::vector<ServerConf> >::iterator it = config._serversByPort.begin(); it != config._serversByPort.end(); it++) {
+        servers.push_back(Server(it->first, it->second));
+    }
     for (size_t i = 0; i < servers.size(); i++) {
         servers[i].start();
     }

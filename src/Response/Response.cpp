@@ -35,7 +35,7 @@ Response::Response(int clientSocket)
     _headersSent = false;
 }
 
-Response::Response(int clientSocket, ServerConf &config)
+Response::Response(int clientSocket, std::vector<ServerConf> &servers)
     : _protocol(""),
       _status_code(""),
       _body(""),
@@ -49,8 +49,7 @@ Response::Response(int clientSocket, ServerConf &config)
     _buffer = "";
     _clientSocket = clientSocket;
     _headersSent = false;
-    _config = config;
-    
+    _servers = servers;
     _error = 0;
     _autoindex = false;
     _isTextStream = false;
@@ -105,8 +104,12 @@ int Response::findRouting(Request &req)
             _errorPages = it->getErrorPages();
             _methods = it->getMethods();
             _redirect = it->getReturned();
-            std::string relativePath = req.getPath().substr(it->getLocationName().length());
+            // remove location name from path
+            int idx = req.getPath().find(it->getLocationName());
+            std::string locationName = it->getLocationName();
+            std::string relativePath = req.getPath().find_first_of(locationName) == 0 ? req.getPath().substr(locationName.length()) : req.getPath().substr(0, idx);
             _filePath = constructFilePath(relativePath, _root, _index);
+            
             if (_redirect.empty() == false && (req.getPath().substr(it->getLocationName().length()) == "/" || req.getPath().substr(it->getLocationName().length()) == "") && req.getMethod() == "GET")
             {
                 _error = 301;
@@ -126,6 +129,7 @@ int Response::findRouting(Request &req)
     _index = _config.getString(INDEX);
     _autoindex = _config.getAutoindex();
     _errorPages = _config.getErrorPages();
+    _methods = _config.getMethods();
     _filePath = constructFilePath(req.getPath(), _root, _index);
     if (_autoindex == true)
     {
@@ -423,26 +427,27 @@ int Response::sendTextData()
     // return CONTINUE;
 }
 
-// void    Response::findConfig(Request &req)
-// {
-//     const std::map<std::string, std::string> &headers = req.getHeaders();
-//     if (headers.find("Host") != headers.end())
-//     {
-//         std::string host = headers.find("Host")->second;
-//         for (std::vector<ServerConf>::iterator it = _servers.begin(); it != _servers.end(); it++)
-//         {
-//             if (it->getString(HOST) == host)
-//             {
-//                 _config = *it;
-//                 return;
-//             }
-//         }
-//     }
-// }
+void    Response::findConfig(Request &req)
+{
+    const std::map<std::string, std::string> &headers = req.getHeaders();
+    if (headers.find("Host") != headers.end())
+    {
+        std::string host = headers.find("Host")->second;
+        for (std::vector<ServerConf>::iterator it = _servers.begin(); it != _servers.end(); it++)
+        {
+            if (it->getString(SERVER_NAME) == host)
+            {
+                _config = *it;
+                return;
+            }
+        }
+    }
+    _config = _servers[0];
+}
 
 int Response::sendResp(Request &req)
 {
-    // findConfig(req);
+    findConfig(req);
     std::stringstream ss;
     if (_fd == 0 && _isCGI == false)
     {

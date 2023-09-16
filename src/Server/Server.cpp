@@ -14,9 +14,7 @@ std::map<std::string, std::string> mimeTypes = getMimeTypes();
  * @param address The server address to bind to.
  * @param port The port number to listen on.
  */
-Server::Server(ServerConf &serverConf) : _port(serverConf.getNum(LISTEN)),
-      _serverSocket(-1),
-      _serverConf(serverConf) {
+Server::Server(int port, std::vector<ServerConf> &servers) : _port(port), _serverConf(servers) {
     int reuse = 1;
     _serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     fcntl(_serverSocket, F_SETFL, O_NONBLOCK);
@@ -131,7 +129,7 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
         if (FD_ISSET(clientSocket, &writeSet) && _requests[clientSocket].isHeadersRead() && _requests[clientSocket].isBodyRead()) {
             int res;
             CGI cgi;
-            if (_requests[clientSocket].getPath().find(".py") != std::string::npos) {
+            if (_requests[clientSocket].getPath().find(".bla") != std::string::npos) {
                 try {
                 res = cgi.CGIHandler(_requests[clientSocket], _responses[clientSocket], clientSocket);
                 }

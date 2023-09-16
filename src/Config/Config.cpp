@@ -15,12 +15,12 @@ ServerConf::ServerConf() {
     this->_root = "";
     this->_index = "";
     this->_errorPages = std::map<int , std::string>();
+    this->_methods = std::vector<std::string>();
 }
 ServerConf::~ServerConf() {}
 Location::Location() {
     this->_locationName = "";
     this->_returned = "";
-    this->_methods = std::vector<std::string>();
     this->_compiler = "";
 }
 Location::~Location() {}
@@ -36,6 +36,7 @@ ServerConf::ServerConf(const ServerConf &copy)
     this->_index = copy._index;
     this->_errorPages = copy._errorPages;
     this->location = copy.location;
+    this->_methods = copy._methods;
 }
 
 ServerConf &ServerConf::operator=(const ServerConf &copy)
@@ -49,6 +50,7 @@ ServerConf &ServerConf::operator=(const ServerConf &copy)
     this->_index = copy._index;
     this->_errorPages = copy._errorPages;
     this->location = copy.location;
+    this->_methods = copy._methods;
     return *this;
 }
 
@@ -73,12 +75,12 @@ std::string Location::getReturned() const
 }
 
 
-void Location::setMethods(std::vector<std::string> methods)
+void ServerConf::setMethods(std::vector<std::string> methods)
 {
     this->_methods = methods;
 }
 
-std::vector<std::string> Location::getMethods() const
+std::vector<std::string> ServerConf::getMethods() const
 {
     return this->_methods;
 }
