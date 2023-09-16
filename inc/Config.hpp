@@ -19,6 +19,7 @@ class Config {
         Config(char *file);
         ~Config();
         std::vector<ServerConf>  _servers;
+        std::map<int , std::vector<ServerConf> > _serversByPort;
 };
 
 class Location;
@@ -39,7 +40,7 @@ class ServerConf {
         ServerConf &operator=(const ServerConf &copy);
         ~ServerConf();
         bool getAutoindex() const;
-        size_t getNum(std::string type) const; // Takes in the Listen and Client_body_size and retruns the value of int type
+        size_t getNum(std::string type) const;
         std::string getString(std::string type) const;
         std::map<int , std::string> getErrorPages() const;
         void setAutoindex(bool value);
