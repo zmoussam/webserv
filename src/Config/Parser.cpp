@@ -299,6 +299,24 @@ void Parser::parseToken(Config &config)
     try {
         Tokenizer(this->tokens, config._file);
         parseConfig(config);
+        while (config._servers.size() > 1) {
+            for (size_t i = 0; i < config._servers.size() - 1; i++) {
+                for (size_t j = i + 1; j < config._servers.size(); j++) {
+                    if (config._servers[i].getNum(LISTEN) == config._servers[j].getNum(LISTEN) && config._servers[i].getString(SERVER_NAME) == config._servers[j].getString(SERVER_NAME))
+                        throw std::runtime_error("ERROR: SAME_SERVER");
+                }
+            }
+            break;
+        }   
+        for (size_t i = 0; i < config._servers.size() - 1; i++) {
+            for (size_t j = i + 1; j < config._servers.size(); j++) {
+                if (config._servers[i].getNum(LISTEN) == config._servers[j].getNum(LISTEN) && config._servers[i].getString(SERVER_NAME) != config._servers[j].getString(SERVER_NAME)) {
+                    config._servers[i].setNum(LISTEN, config._servers[j].getNum(LISTEN));
+                    config._servers[i].setString(SERVER_NAME, config._servers[j].getString(SERVER_NAME));
+                    config._servers.erase(config._servers.begin() + j);
+                }
+            }
+        }
         // for (size_t i = 0; i < config._servers.size(); i++) {
         //     std::cout << "listen: " << config._servers[i].getNum(LISTEN) << std::endl;
         //     std::cout << "host: " << config._servers[i].getString(HOST) << std::endl;
