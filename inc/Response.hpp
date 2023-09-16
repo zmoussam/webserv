@@ -45,6 +45,7 @@ class Response
 		void	checkHttpVersion(Request &req);
 		void	handleError(Request &req);
 		void	genListing();
+		void	findConfig(Request &req);
 		std::string _root;
 		std::string _index;
 		ServerConf _config;

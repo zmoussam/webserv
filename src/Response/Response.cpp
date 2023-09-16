@@ -3,8 +3,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <dirent.h>
-Response::Response()
-    : _protocol(""),
+Response::Response() :
+      _protocol(""),
       _status_code(""),
       _body(""),
       _headers()
@@ -16,6 +16,7 @@ Response::Response()
     _filePath = "";
     _buffer = "";
     _clientSocket = -1;
+    _headersSent = false;
 }
 
 Response::Response(int clientSocket)
@@ -49,6 +50,7 @@ Response::Response(int clientSocket, ServerConf &config)
     _clientSocket = clientSocket;
     _headersSent = false;
     _config = config;
+    
     _error = 0;
     _autoindex = false;
     _isTextStream = false;
@@ -96,7 +98,7 @@ int Response::findRouting(Request &req)
     {
         if (req.getPath().find(it->getLocationName()) == 0)
         {
-            std::cout << "Found location" << std::endl;
+            _location = *it;
             _root = it->getString(ROOT);
             _index = it->getString(INDEX);
             _autoindex = it->getAutoindex();
@@ -104,6 +106,7 @@ int Response::findRouting(Request &req)
             _methods = it->getMethods();
             _redirect = it->getReturned();
             std::string relativePath = req.getPath().substr(it->getLocationName().length());
+            _filePath = constructFilePath(relativePath, _root, _index);
             if (_redirect.empty() == false && (req.getPath().substr(it->getLocationName().length()) == "/" || req.getPath().substr(it->getLocationName().length()) == "") && req.getMethod() == "GET")
             {
                 _error = 301;
@@ -111,8 +114,9 @@ int Response::findRouting(Request &req)
             }
             if (_autoindex == true)
             {
-                _filePath = constructFilePath(req.getPath(), _root, "");
+                _filePath = constructFilePath(relativePath, _root, "");
                 _isTextStream = true;
+                std::cout << _filePath << std::endl;
                 return CONTINUE;
             }
             return CONTINUE;
@@ -154,9 +158,8 @@ void Response::handleError(Request &req)
     {
         _fileSize = 0;
         _isTextStream = true;
-        return;
     }
-    if (_error == 404)
+    else if (_error == 404 || _error == 405 || _error == 501 || _error == 500 || _error == 505)
     {
         if (_errorPages.empty())
         {
@@ -164,76 +167,6 @@ void Response::handleError(Request &req)
             if (_errorPages.empty())
             {
                 handleDefaultError(req);
-                _fileSize = lseek(_fd, 0, SEEK_END);
-                lseek(_fd, 0, SEEK_SET);
-                return;
-            }
-        }
-        _filePath = constructFilePath(_errorPages[_error], _root, _index);
-        std::cout << "Error file path: " << _filePath << std::endl;
-        _fd = open(_filePath.c_str(), O_RDONLY);
-    }
-    else if (_error == 405)
-    {
-        if (_errorPages.empty())
-        {
-            _errorPages = _config.getErrorPages();
-            if (_errorPages.empty())
-            {
-                handleDefaultError(req);
-                _fileSize = lseek(_fd, 0, SEEK_END);
-                lseek(_fd, 0, SEEK_SET);
-                return;
-            }
-        }
-        _filePath = constructFilePath(_errorPages[_error], _root, _index);
-        std::cout << "Error file path: " << _filePath << std::endl;
-        _fd = open(_filePath.c_str(), O_RDONLY);
-    }
-    else if (_error == 501)
-    {
-        if (_errorPages.empty())
-        {
-            _errorPages = _config.getErrorPages();
-            if (_errorPages.empty())
-            {
-                handleDefaultError(req);
-                _fileSize = lseek(_fd, 0, SEEK_END);
-                lseek(_fd, 0, SEEK_SET);
-                return;
-            }
-        }
-        _filePath = constructFilePath(_errorPages[_error], _root, _index);
-        std::cout << "Error file path: " << _filePath << std::endl;
-        _fd = open(_filePath.c_str(), O_RDONLY);
-    }
-    else if (_error == 500)
-    {
-        if (_errorPages.empty())
-        {
-            _errorPages = _config.getErrorPages();
-            if (_errorPages.empty())
-            {
-                handleDefaultError(req);
-                _fileSize = lseek(_fd, 0, SEEK_END);
-                lseek(_fd, 0, SEEK_SET);
-                return;
-            }
-        }
-        _filePath = constructFilePath(_errorPages[_error], _root, _index);
-        std::cout << "Error file path: " << _filePath << std::endl;
-        _fd = open(_filePath.c_str(), O_RDONLY);
-    }
-    else if (_error == 505)
-    {
-        if (_errorPages.empty())
-        {
-            _errorPages = _config.getErrorPages();
-            if (_errorPages.empty())
-            {
-                handleDefaultError(req);
-                _fileSize = lseek(_fd, 0, SEEK_END);
-                lseek(_fd, 0, SEEK_SET);
                 return;
             }
         }
@@ -243,53 +176,59 @@ void Response::handleError(Request &req)
     }
 }
 
+std::string findDirname(std::string &path, std::string &root)
+{
+    // remove root from path and return the dirname
+    std::string dirname = path.substr(root.length());
+    size_t pos = dirname.find_last_of('/');
+    if (pos == std::string::npos)
+        return "";
+    dirname = dirname.substr(0, pos);
+    return dirname;
+}
+
+
 void Response::genListing()
 {
-    std::stringstream ss;
     std::string path = _filePath;
-    std::string dirName = _filePath.substr(_root.length()).substr(0, _filePath.substr(_root.length()).find_last_of("/"));
-    path.substr(path.find_last_of("/") + 1);
-    std::string pathName = dirName.empty() ? "/" : dirName;
-    ss << "<html><head><title>Index of " << pathName << "</title></head><body bgcolor=\"white\"><h1>Index of " << pathName << "</h1><hr><pre>";
-    DIR *dir;
+    DIR *dir = opendir(path.c_str());
     struct dirent *ent;
+    if (dir == NULL)
+    {
+        _error = 69;
+        return;
+    }
+    std::stringstream ss;
+    std::string location = _location.getLocationName();
+    std::string pathName;
+    if (!location.empty())
+        pathName = location + "/";
+    else
+        pathName = findDirname(path, _root) + "/";
+    if (pathName.empty())
+        ss << "<html><head><title>Index of " << "/" << "</title></head><body bgcolor=\"white\"><h1>Index of " << "/" << "</h1><hr><pre>";
+    else
+        ss << "<html><head><title>Index of " << pathName << "</title></head><body bgcolor=\"white\"><h1>Index of " << pathName << "</h1><hr><pre>";
 
     if ((dir = opendir(path.c_str())) != NULL)
     {
         while ((ent = readdir(dir)) != NULL)
         {
-            ss << "<a href=\"" << dirName << "/" << ent->d_name << "\">" << ent->d_name << "</a><br>";
+            if (ent->d_name[0] == '.' && !ent->d_name[1])
+                continue;
+            ss << "<a href=\"" << pathName << ent->d_name << "\">" << ent->d_name << "</a><br>";
         }
         closedir(dir);
     }
-    else
-    {
-        // if dir is null, then it's a file so just change the filepath to the file and set the _error to 69
-        _error = 69;
-        return;
-    }
     ss << "</pre><hr></body></html>";
     _body = ss.str();
+    _fileSize = _body.size();
     _isTextStream = true;
 }
 
 void Response::InitFile(Request &req)
 {
     int routing = findRouting(req);
-    if (_autoindex == true)
-    {
-        genListing();
-        std::cout << _filePath << std::endl;
-        if (_error != 69)
-        {
-            return;
-        }
-        else
-        {
-            _error = 0;
-            _isTextStream = false;
-        }
-    }
     if (routing == 404)
     {
         handleError(req);
@@ -303,6 +242,28 @@ void Response::InitFile(Request &req)
     else if (routing == 301)
     {
         handleError(req);
+        return;
+    }
+    if (_autoindex == true)
+    {
+        if (_isTextStream == true)
+            genListing();
+        if (_error != 69)
+        {
+            return;
+        }
+        _isTextStream = false;
+        _error = 0;
+    }
+    if (isDirectory(_filePath.c_str()))
+    {
+        _error = 404;
+        handleError(req);
+        if (_fd == -1)
+        {
+            handleDefaultError(req);
+            return;
+        }
         return;
     }
     _fd = open(_filePath.c_str(), O_RDONLY);
@@ -360,10 +321,10 @@ void Response::InitHeaders(Request &req)
     {
         _headers["Content-Type"] = getContentType(_filePath);
     }
-    if (_isTextStream == true)
+    if (_isTextStream == true && _redirect.empty())
     {
-        _headers["Content-Type"] = "text/html";
-        _headers["Content-Length"] = _body.length();
+        ss << _body.length();
+        _headers["Content-Length"] = ss.str();
         _headers["Connection"] = "keep-alive";
         return;
     }
@@ -462,9 +423,26 @@ int Response::sendTextData()
     // return CONTINUE;
 }
 
+// void    Response::findConfig(Request &req)
+// {
+//     const std::map<std::string, std::string> &headers = req.getHeaders();
+//     if (headers.find("Host") != headers.end())
+//     {
+//         std::string host = headers.find("Host")->second;
+//         for (std::vector<ServerConf>::iterator it = _servers.begin(); it != _servers.end(); it++)
+//         {
+//             if (it->getString(HOST) == host)
+//             {
+//                 _config = *it;
+//                 return;
+//             }
+//         }
+//     }
+// }
+
 int Response::sendResp(Request &req)
 {
-
+    // findConfig(req);
     std::stringstream ss;
     if (_fd == 0 && _isCGI == false)
     {

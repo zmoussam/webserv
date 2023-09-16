@@ -22,10 +22,16 @@ std::string constructFilePath(const std::string& requestPath, const std::string 
 
 
 std::string getContentType(std::string filename) {
+    std::string extension;
     if (filename.empty()) {
         return "text/html";
     }
-	std::string extension = filename.substr(filename.find_last_of('.'));
+    try {
+	    extension = filename.substr(filename.find_last_of('.'));
+    }
+    catch (std::exception &e) {
+        return "text/html";
+    }
 	if (mimeTypes.find(extension) != mimeTypes.end()) {
 		return mimeTypes[extension];
 	}

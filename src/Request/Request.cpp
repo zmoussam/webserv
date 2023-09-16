@@ -77,7 +77,7 @@ int Request::handleRequest() {
     // if the request is received and the body is read
 	if (rcvRes == DONE && _isBodyRead) {
 		parsseRequest(); // parse the request received from the client and fill the request object
-        // std::cout << _request << std::endl;
+        std::cout << _request << std::endl;
 	}
 	return (0);
 }
