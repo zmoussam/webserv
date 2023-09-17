@@ -149,7 +149,7 @@ void Response::handleDefaultError(Request &req)
 {
     unused(req);
     std::stringstream ss;
-    ss << "<center><h1>" << _error << " Error</h1></center>";
+    ss << "<center><h1>" << _error << "Error</h1></center>";
     _body = ss.str();
     _fileSize = _body.size();
     _headers["Content-Type"] = "text/html";
@@ -344,18 +344,45 @@ void Response::InitHeaders(Request &req)
 #ifdef __APPLE__
 int Response::sendFileData()
 {
+    std::cout << "fdINResponse: "<< _fd << std::endl;
+    if (_headersSent == false && _isCGI == true)
+    {
+        _fileSize = lseek(_fd, 0, SEEK_END);
+        lseek(_fd, 0, SEEK_SET);
+        std::string body ="HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Type: text/html\r\nServer: Webserv/1.0\r\nContent-Length: " + std::to_string(_fileSize) + "\r\n\r\n";
+        ssize_t bytesSent = send(_clientSocket, body.c_str(), strlen(body.c_str()), 0);
+     if (bytesSent == -1)
+     {
+         std::cout << "error" << std::endl;
+         return ERROR;
+     }
+        _headersSent = true;
+    }
     off_t bytesSent = 1024;
     int res = sendfile(_fd, _clientSocket, _offset, &bytesSent, NULL, 0);
     if (res == -1 && _offset >= _fileSize)
     {
+        std::cout << "error" << std::endl;
+        close(_fd);
+        if (_isCGI == true)
+            unlink("Lina.txt");
         return DONE;
     }
     _offset += bytesSent;
     if (_offset >= _fileSize)
     {
-        close(_fd);
+        std::cout <<"unlink arbi"<< _fd<< std::endl;
+        // if (_fd > 0)
+        // {
+        // close(_fd);
+        // if (_isCGI == true)
+        //     unlink("Lina.txt");
+
+        // }
         _fd = -1;
         _offset = 0;
+        std::cout << "done: \n";
+        std::cout << "********\n";
         return DONE;
     }
     return CONTINUE;
@@ -399,8 +426,6 @@ int Response::sendTextData()
     ssize_t remainingBytes = body.length() - _dataSent;
     ssize_t bytesSent = send(_clientSocket, body.c_str() + _dataSent, remainingBytes, 0);
     _dataSent += bytesSent;
-    // std::cout << "Text sent:" <<  std::string(body.c_str() + _dataSent).substr(0, bytesSent) << std::endl;
-
     if (bytesSent == -1)
     {
         return ERROR;
@@ -417,14 +442,6 @@ int Response::sendTextData()
         return DONE;
     }
     return CONTINUE;
-    // int res = send(_clientSocket,  _body.c_str() + _dataSent, _body.length() - _dataSent, 0);
-
-    // if (res == -1 && _dataSent >= _body.length())
-    // {
-    //     return DONE;
-    // }
-    // _dataSent += res;
-    // return CONTINUE;
 }
 
 void    Response::findConfig(Request &req)
@@ -445,9 +462,15 @@ void    Response::findConfig(Request &req)
     _config = _servers[0];
 }
 
-int Response::sendResp(Request &req)
+int Response::sendResp(Request &req, int fdcgi)
 {
     findConfig(req);
+    if (fdcgi > 0)
+    {
+        _fd = fdcgi;
+        _isCGI = true;
+        return sendFileData();
+    }
     std::stringstream ss;
     if (_fd == 0 && _isCGI == false)
     {

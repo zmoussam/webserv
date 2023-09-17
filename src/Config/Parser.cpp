@@ -151,21 +151,24 @@ std::string Parser::parseStringRules(std::string key) {
 Location Parser::parseLocationBody()
 {
     Location location;
+    bool isCGI = false;
 
     location.setLocationName(parseValue(match("value")._value));
+    if (location.getLocationName()[0] == '\\')
+        isCGI = true;
     match("{");
     while (!look("}")) {
         if (look("allow_methods"))
             location.setMethods(parseMethods());
         else if (look("root"))
             location.setString(ROOT, parseStringRules(ROOT));
-        else if (look("index"))
+        else if (look("index") && isCGI == false)
             location.setString(INDEX, parseStringRules(INDEX));
         else if (look("client_body_size"))
             location.setNum(BODY_SIZE, parseNumRules(BODY_SIZE));
-        else if (look("error_page"))
+        else if (look("error_page") && isCGI == false)
             location.setErrorPage(parseErrorPage());
-        else if (look("autoindex"))
+        else if (look("autoindex") && isCGI == false)
             location.setAutoindex(parseAutoindex());
         else if (look("return"))
             location.setReturned(parseStringRules(REDIRECT));

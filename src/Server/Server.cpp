@@ -110,28 +110,43 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
         _clients.push_back(clientSocket);
         _requests[clientSocket] = Request(clientSocket);
         _responses[clientSocket] = Response(clientSocket, _serverConf);
+        _cgis[clientSocket] = CGI();
     }
-
+    int res = 0;
     for (size_t i = 0; i < _clients.size(); i++) {
         int clientSocket = _clients[i];
         if (FD_ISSET(clientSocket, &readSet)) {
             int req = _requests[clientSocket].handleRequest();
             if (req == DISCONNECTED) {
+                std::cout << "Client disconnected in request" << std::endl;
                 FD_CLR(clientSocket, &masterSet);
                 close(clientSocket);
                 _clients.erase(_clients.begin() + i);
                 _responses.erase(clientSocket);
                 _requests.erase(clientSocket);
+                // close(_cgis[clientSocket]._fd);
+                // unlink("Lina.txt");
+                _cgis.erase(clientSocket);
                 i--;
                 req = 0;
             }
         }
         if (FD_ISSET(clientSocket, &writeSet) && _requests[clientSocket].isHeadersRead() && _requests[clientSocket].isBodyRead()) {
-            int res;
-            CGI cgi;
-            if (_requests[clientSocket].getPath().find(".bla") != std::string::npos) {
+            if (_requests[clientSocket].getPath().find(".py") != std::string::npos) {
                 try {
-                res = cgi.CGIHandler(_requests[clientSocket], _responses[clientSocket], clientSocket);
+                std::cout << "CGI :"<< _cgis[clientSocket]._fd << std::endl;
+                res = _cgis[clientSocket].CGIHandler(_requests[clientSocket], _responses[clientSocket], clientSocket);
+                if (_cgis[clientSocket].isCgiDone() == true && _cgis[clientSocket]._fd > 0)
+                {
+                    std::cout << "CGI DONE" << std::endl;
+                    res = _responses[clientSocket].sendResp(_requests[clientSocket], _cgis[clientSocket]._fd);
+                    unlink("Lina.txt");
+                }
+                // else
+                // {
+                //     std::cout << "CGI NOT DONE" << std::endl;
+                //     continue;
+                // }
                 }
                catch(std::exception &e) {
                     std::cout << e.what() << std::endl;
@@ -140,7 +155,7 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
             }
             else
             {
-                    res = _responses[clientSocket].sendResp(_requests[clientSocket]);
+                    res = _responses[clientSocket].sendResp(_requests[clientSocket], 0);
             }
             if (res == DONE) {
                 FD_CLR(clientSocket, &masterSet);
@@ -148,6 +163,9 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
                 _clients.erase(_clients.begin() + i);
                 _responses.erase(clientSocket);
                 _requests.erase(clientSocket);
+                // close(_cgis[clientSocket]._fd);
+                // unlink("Lina.txt");
+                _cgis.erase(clientSocket);
                 i--;
                 res = 0;
             }

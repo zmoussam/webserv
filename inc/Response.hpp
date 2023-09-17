@@ -30,7 +30,7 @@ class Response
 		std::string checkFilePath(Request &req);
 		void		handleDefaultError(Request &req);
 		int		sendError(std::string &root, std::map<int, std::string> &errpages);
-		int		sendResp(Request &req);
+		int		sendResp(Request &req, int fd);
 		int		findRouting(Request &req);
 		void	findStatusCode(Request &req);
 		void 	setSocket(int clientSocket) { _clientSocket = clientSocket; }

@@ -17,10 +17,16 @@ class CGI {
         void redirectURL();
         void checkStatusCode();
         void initHeaders();
+        bool isCgiRan() const {return _cgiRan;}
+        bool isCgiDone() const {return _isCgiDone;}
+        int _fd;
+        std::string _cgifd;
     private:
         std::string _filename;
         bool _headersSent;
         std::string _buffer;
+        bool _cgiRan;
+        bool _isCgiDone;
         std::string _status_code;
         int _error_code;
         Location _location;

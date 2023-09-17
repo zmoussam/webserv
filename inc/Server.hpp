@@ -26,6 +26,7 @@ class Server {
 		struct sockaddr_in _serverAddress;
 		std::map<int, Request> _requests;
     	std::map<int, Response> _responses;
+		std::map<int, CGI> _cgis;
 		std::vector<int> _clients;
 		std::vector<ServerConf> _serverConf;
 	public:
