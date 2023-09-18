@@ -2,10 +2,24 @@
 CGI::CGI()
 {
   _root = "www/";
-  _autoindex = false;
   _redirect = "";
   _cgi_path = "";
   _compiler = "/usr/bin/python3 ";
+  _headersSent = false;
+  _error_code = 0;
+  _status_code = "";
+  _isCgiDone = false;
+  _cgiRan = false;
+  _fd = 0;
+}
+
+CGI::CGI(int clientSocket, std::vector<ServerConf> &servers) : _servers(servers)
+{
+  _root = "www/";
+  _redirect = "";
+  _cgi_path = "";
+  _compiler = "";
+  _clientSocket = clientSocket;
   _headersSent = false;
   _error_code = 0;
   _status_code = "";
@@ -56,34 +70,50 @@ void    CGI::checkStatusCode() {
     }
 }
 void CGI::initHeaders() {
-  checkStatusCode();
   _headers["Server"] = "luna/1.0";
   _headers["Content-Type"] = "text/html";
   if (!(_redirect.empty())) {
-      _headers["Location"] = _redirect;
-      _error_code = 301;
+    _headers["Location"] = _redirect;
+    _error_code = 301;
   }
   _headers["Connection"] = "keep-alive";
 }
 
-void CGI::initializeCGIParameters(Request &req, Response &resp) {
+void    CGI::findConfig(Request &req)
+{
+    const std::map<std::string, std::string> &headers = req.getHeaders();
+    if (headers.find("Host") != headers.end())
+    {
+        std::string host = headers.find("Host")->second;
+        for (std::vector<ServerConf>::iterator it = _servers.begin(); it != _servers.end(); it++)
+        {
+            if (it->getString(SERVER_NAME) == host)
+            {
+                _config = *it;
+                return;
+            }
+        }
+    }
+    _config = _servers[0];
+}
+
+int CGI::initializeCGIParameters(Request &req, Response &resp) {
+  findConfig(req);
   _cgi_path = req.getPath();
   _filename = _cgi_path.substr(_cgi_path.find_last_of('/') + 1);
   std::string fileExtension = "";
-  std::vector<Location>::iterator it = resp._config.location.begin();
+  std::vector<Location>::iterator it = _config.location.begin();
   std::string extension = getFileExtension(_filename);
   if (extension.empty())
-    {
-      _error_code = 404;
-      std::cout << "Error: extension empty" << std::endl;
-    }
+  {
+    _error_code = 500;
+    return 500;
+  }
   while (it != resp._config.location.end())
   {
     std::string cgiLocation = it->getLocationName().erase(0, 1);
     if (cgiLocation == extension)
     {
-      _autoindex = it->getAutoindex();
-      _redirect = it->getReturned();
       _methods = it->getMethods();
       if (!it->getString(ROOT).empty())
         _root = it->getString(ROOT);
@@ -101,52 +131,61 @@ void CGI::initializeCGIParameters(Request &req, Response &resp) {
     it_meth++;
   }
   if (it_meth == _methods.end())
+  {
     _error_code = 405;
+    std::cout << "error code: " << _error_code << std::endl;
+    return 405;
+  }
   if (_compiler.empty())
-    {
-
-      _error_code = 404;
-      std::cout << "Error: compiler empty" << std::endl;
-    }
+  {
+    _error_code = 500;
+    return 500;
+  }
   initHeaders();
+  return 0;
 }
 
-void CGI::handlePostMethod(Request &req, std::string &tmpfile) {
+int CGI::handlePostMethod(Request &req) {
   if (req.getMethod() == "POST")
   {
+    std::string tmpfile = std::to_string(getpid()) + ".txt";
     std::string body = req.getBody();
     std::ofstream ofs(tmpfile);
-		if (!ofs.is_open())
-			{
-        _error_code = 503;
-        std::cout << "Error:wik"<< std::endl;
-        }
+		if (!ofs.is_open()) {
+      _error_code = 500;
+      return 500;
+    }
 		ofs << body;
 		ofs.close();
 		int fdf = open(tmpfile.c_str(), O_RDWR);
-		if (fdf == -1)
-			{
-        _error_code = 503;
-        std::cout << "Error:lk"<< std::endl;
-        }
-		if (dup2(fdf, STDIN_FILENO) == -1)
-			{
-        _error_code = 503;
-        std::cout << "Error:fik"<< std::endl;
-        }
+		if (fdf == -1) {
+      _error_code = 500;
+      return 500;
+    }
+		if (dup2(fdf, STDIN_FILENO) == -1) {
+      _error_code = 500;
+      return 500;
+    }
 		close(fdf);
     if (req.getHeaders().find("Content-Length") != req.getHeaders().end())
       setenv("CONTENT_LENGTH", req.getHeaders()["Content-Length"].c_str(), 1);
+    unlink(tmpfile.c_str());
   }
+  return 0;
 }
 
-void CGI::executeCGIScript(int clientSocket) {
+int CGI::executeCGIScript(int clientSocket) {
     unused(clientSocket);
+    std::string path = _root + _filename;
+    if (access(path.c_str(), F_OK) == -1) {
+        _error_code = 404;
+        return 404;
+    }
     std::string command = _compiler + _root + _filename;
     FILE* pipe = popen(command.c_str(), "r");
     if (!pipe) {
-        _error_code = 503;
-        return;  // Handle the error or exit early
+        _error_code = 500;
+        return 500;
     }
     
     char buffer[128];
@@ -158,8 +197,10 @@ void CGI::executeCGIScript(int clientSocket) {
     if (_fd != -1) {
         write(_fd, body.c_str(), body.size());
     } else {
-        _error_code = 503;
+        _error_code = 500;
+        return 500;
     }
+    return 0;
 }
 
 int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
@@ -171,10 +212,11 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
     _fd = open(_cgifd.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
     pid = fork();
     if (pid == 0) {
-      initializeCGIParameters(req, resp);
-      std::string tmpfile = std::to_string(getpid()) + ".txt";
-      handlePostMethod(req, tmpfile);
-      unlink(tmpfile.c_str());
+      if (initializeCGIParameters(req, resp) != 0)
+        exit (_error_code);
+      if (handlePostMethod(req) != 0)
+        exit (_error_code);
+      setenv("HTTP_COOKIE", req.getHeaders()["Cookie"].c_str(), 1);
       setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
       setenv("REQUEST_URI", req.getPath().c_str(), 1);
       setenv("QUERY_STRING", req.getQueries().c_str(), 1);
@@ -184,7 +226,9 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
       setenv("PATH_INFO", req.getPath().c_str(), 1);
       setenv("SCRIPT_NAME", _cgi_path.c_str(), 1);
       setenv("REDIRECT_STATUS", "", 1);
-      executeCGIScript(clientSocket);
+      if (executeCGIScript(clientSocket) != 0)
+        exit (_error_code);
+      std::cout << "wa exita\n";
       exit(DONE);
     }
   }
@@ -192,14 +236,15 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
   {
       if (WIFEXITED(status)) {
         status = WEXITSTATUS(status);
-        _isCgiDone = true;
-        if (_fd == -1) {
-          _error_code = 503;
+      _isCgiDone = true;
+      checkStatusCode();
+      if (_fd == -1) {
+        _error_code = 500;
+        checkStatusCode();
       }
     }
-    else {
+    else
       return (CONTINUE);
-    }
   }
   _cgiRan = true;
   return (CONTINUE);

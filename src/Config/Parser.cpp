@@ -42,6 +42,8 @@ size_t parseNum(std::string str) {
         else
             throw std::runtime_error(NOT_VALID);
     }
+    if (number > INT_MAX)
+        throw std::runtime_error(BIG_NUMBER);
     return number;
 }
 
@@ -128,11 +130,16 @@ std::vector<std::string> Parser::parseMethods()
 
     args = splitArgs(match("value")._value);
     for (size_t i = 0; i < args.size(); i++) {
-        if (args[i] == "GET" || args[i] == "POST" || args[i] == "DELETE")
-            methods.push_back(args[i]);
-        else
+        if (std::find(methods.begin(), methods.end(), args[i]) != methods.end() || (args[i] != "GET" && args[i] != "POST" && args[i] != "DELETE"))
             throw std::runtime_error(NOT_VALID);
+        methods.push_back(args[i]);
     }
+    // for (size_t i = 0; i < args.size(); i++) {
+    //     if (args[i] == "GET" || args[i] == "POST" || args[i] == "DELETE")
+    //         methods.push_back(args[i]);
+    //     else
+    //         throw std::runtime_error(NOT_VALID);
+    // }
     return methods;
 }
 

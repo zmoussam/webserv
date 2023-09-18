@@ -391,7 +391,7 @@ void Request::parsseBody(size_t &_bodyPos)
         getChunkedBody(_bodyPos);
         _bodySize = _body.size();
     }
-    std::cout <<_body << std::endl;
+    // std::cout <<_body << std::endl;
 }
 void freeBoundaryBody(BoundaryBody *head)
 {

@@ -50,6 +50,7 @@ class Response
 		std::string _index;
 		ServerConf _config;
 	private:
+		int _error;
 		std::vector<ServerConf> _servers;
 		Location _location;
 		Request _request;
@@ -66,7 +67,6 @@ class Response
 		std::map<std::string, std::string> _headers;
 		std::string _filePath;
 		std::string _buffer;
-		int _error;
 		std::vector<std::string> _methods;
 		std::string _returnPath;
 		bool _autoindex;

@@ -149,7 +149,7 @@ void Response::handleDefaultError(Request &req)
 {
     unused(req);
     std::stringstream ss;
-    ss << "<center><h1>" << _error << "Error</h1></center>";
+    ss << "<center><h1>" << _error << " Error</h1></center>";
     _body = ss.str();
     _fileSize = _body.size();
     _headers["Content-Type"] = "text/html";
