@@ -1,5 +1,4 @@
 # include "../../inc/CGIHandler.hpp"
-# include <fcntl.h>
 CGI::CGI()
 {
   _root = "www/";
@@ -142,38 +141,38 @@ void CGI::handlePostMethod(Request &req, std::string &tmpfile) {
 }
 
 void CGI::executeCGIScript(int clientSocket) {
-  unused(clientSocket);
-  std::string command = _compiler + _root + _filename;
-  FILE* pipe = popen(command.c_str(), "r");
-  if (!pipe)
-    _error_code = 503;
-  char buffer[128];
+    unused(clientSocket);
+    std::string command = _compiler + _root + _filename;
+    FILE* pipe = popen(command.c_str(), "r");
+    if (!pipe) {
+        _error_code = 503;
+        return;  // Handle the error or exit early
+    }
+    
+    char buffer[128];
     std::string body;
     while (fgets(buffer, sizeof(buffer), pipe) != NULL)
         body += buffer;
     pclose(pipe);
     
-    std::ofstream file("Lina.txt");
-    if (file.is_open()) {
-      file << body;
-      file.close();
+    if (_fd != -1) {
+        write(_fd, body.c_str(), body.size());
     } else {
-      _error_code = 503;
+        _error_code = 503;
     }
-    // file.close();
 }
 
 int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
 {
-  std::cout << "fdlwl: " << _fd << std::endl;
-  initializeCGIParameters(req, resp);
   int status = 0;
   int pid = 0;
   if (_cgiRan == false) {
+    _cgifd = "/tmp/" + std::to_string(getpid()) + ".cgi";
+    _fd = open(_cgifd.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
     pid = fork();
     if (pid == 0) {
-    std::string tmpfile = std::to_string(getpid()) + ".txt";
-    std::cout << "dkhlt: "<< std::endl;
+      initializeCGIParameters(req, resp);
+      std::string tmpfile = std::to_string(getpid()) + ".txt";
       handlePostMethod(req, tmpfile);
       unlink(tmpfile.c_str());
       setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
@@ -189,24 +188,19 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
       exit(DONE);
     }
   }
-  if (waitpid(pid, &status, 0) == -1)
+  if (waitpid(pid, &status, WNOHANG) == -1)
   {
-    _error_code = 503;
-    std::cout << "Error: waitpid" << std::endl;
-  }
-  _cgiRan = true;
-  if (WIFEXITED(status)) {
-    status = WEXITSTATUS(status);
-    _isCgiDone = true;
-    if (_fd == 0)
-      _fd = open("Lina.txt", O_RDONLY);
-    std::cout << "fd: " << _fd << std::endl;
-    if (_fd == -1) {
-      _error_code = 503;
+      if (WIFEXITED(status)) {
+        status = WEXITSTATUS(status);
+        _isCgiDone = true;
+        if (_fd == -1) {
+          _error_code = 503;
+      }
+    }
+    else {
+      return (CONTINUE);
     }
   }
-  else {
-    status = CONTINUE;
-  }
-  return (status);
+  _cgiRan = true;
+  return (CONTINUE);
 }

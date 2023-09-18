@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 import cgi
 
+
+
 form = cgi.FieldStorage()
 if form.getvalue('textcontent'):
    text_content = form.getvalue('textcontent')

@@ -344,7 +344,6 @@ void Response::InitHeaders(Request &req)
 #ifdef __APPLE__
 int Response::sendFileData()
 {
-    std::cout << "fdINResponse: "<< _fd << std::endl;
     if (_headersSent == false && _isCGI == true)
     {
         _fileSize = lseek(_fd, 0, SEEK_END);
@@ -364,26 +363,16 @@ int Response::sendFileData()
     {
         std::cout << "error" << std::endl;
         close(_fd);
-        if (_isCGI == true)
-            unlink("Lina.txt");
         return DONE;
     }
     _offset += bytesSent;
     if (_offset >= _fileSize)
     {
-        std::cout <<"unlink arbi"<< _fd<< std::endl;
-        // if (_fd > 0)
-        // {
-        // close(_fd);
-        // if (_isCGI == true)
-        //     unlink("Lina.txt");
-
-        // }
-        _fd = -1;
-        _offset = 0;
-        std::cout << "done: \n";
-        std::cout << "********\n";
+        if (_fd > 0)
+        {
+        close(_fd);
         return DONE;
+        }
     }
     return CONTINUE;
 }

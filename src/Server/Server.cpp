@@ -124,8 +124,6 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
                 _clients.erase(_clients.begin() + i);
                 _responses.erase(clientSocket);
                 _requests.erase(clientSocket);
-                // close(_cgis[clientSocket]._fd);
-                // unlink("Lina.txt");
                 _cgis.erase(clientSocket);
                 i--;
                 req = 0;
@@ -134,19 +132,12 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
         if (FD_ISSET(clientSocket, &writeSet) && _requests[clientSocket].isHeadersRead() && _requests[clientSocket].isBodyRead()) {
             if (_requests[clientSocket].getPath().find(".py") != std::string::npos) {
                 try {
-                std::cout << "CGI :"<< _cgis[clientSocket]._fd << std::endl;
                 res = _cgis[clientSocket].CGIHandler(_requests[clientSocket], _responses[clientSocket], clientSocket);
-                if (_cgis[clientSocket].isCgiDone() == true && _cgis[clientSocket]._fd > 0)
+                if (_cgis[clientSocket].isCgiDone() == true)
                 {
-                    std::cout << "CGI DONE" << std::endl;
                     res = _responses[clientSocket].sendResp(_requests[clientSocket], _cgis[clientSocket]._fd);
-                    unlink("Lina.txt");
+                    unlink(_cgis[clientSocket]._cgifd.c_str());
                 }
-                // else
-                // {
-                //     std::cout << "CGI NOT DONE" << std::endl;
-                //     continue;
-                // }
                 }
                catch(std::exception &e) {
                     std::cout << e.what() << std::endl;
@@ -163,8 +154,6 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
                 _clients.erase(_clients.begin() + i);
                 _responses.erase(clientSocket);
                 _requests.erase(clientSocket);
-                // close(_cgis[clientSocket]._fd);
-                // unlink("Lina.txt");
                 _cgis.erase(clientSocket);
                 i--;
                 res = 0;

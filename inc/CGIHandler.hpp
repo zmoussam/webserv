@@ -1,6 +1,7 @@
 #pragma once
 #include "Request.hpp"
 #include "Response.hpp"
+# include <fcntl.h>
 
 class Response;
 class Request;
