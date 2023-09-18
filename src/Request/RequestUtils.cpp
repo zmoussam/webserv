@@ -5,6 +5,7 @@ Request::Request(const Request & other) {
 }
 Request &Request::operator=(const Request & other) {
     if (this != &other) {
+        this->_REQ.write(other._REQ.str().c_str(), other._REQ.str().size());
         this->_request = other._request;
         this->_requestLength = other._requestLength;
         this->_httpVersion = other._httpVersion;
@@ -16,12 +17,15 @@ Request &Request::operator=(const Request & other) {
         this->_boundaryBody = other._boundaryBody;
         this->_headers = other._headers;
         this->_cookies = other._cookies;
+        this->_config = other._config;
+        this->_servers = other._servers;
+        this->_bodySize = other._bodySize;
+        this->_error = other._error;
         this->_keepAlive = other._keepAlive;
         this->_isHeadersRead = other._isHeadersRead;
         this->_clientSocket = other._clientSocket;
         this->_isBodyRead = other._isBodyRead;
         this->_checkBoundary = other._checkBoundary;
-        this->_REQ.write(other._REQ.str().c_str(), other._REQ.str().size());
     }
     return *this;
 }

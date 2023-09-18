@@ -23,7 +23,7 @@ int Request::waitForBody(size_t headerlength)
     else if (chunkedPos != std::string::npos \
     && _REQ.str().substr(chunkedPos, _REQ.str().find("\r\n", chunkedPos) \
     - chunkedPos).find("chunked") != std::string::npos) // chunked request
-    {
+    { 
         // check if the body is read
         if (_REQ.str().find("\r\n0\r\n\r\n", chunkedPos) != std::string::npos)
         {
@@ -82,7 +82,7 @@ int Request::handleRequest() {
 	return (0);
 }
 
-Request::Request(int clientSocket) 	: 
+Request::Request(int clientSocket, std::vector<ServerConf> servers) :
     _REQ(),
 	_request(""),
     _requestLength(0),
@@ -95,7 +95,11 @@ Request::Request(int clientSocket) 	:
     _boundaryBody(NULL),
 	_headers(),
 	_cookies(),
-	_keepAlive(1),
+    _config(),
+    _servers(servers),
+    _bodySize(0),
+    _error(0),
+    _keepAlive(1),
 	_isHeadersRead(false),
     _clientSocket(clientSocket),
     _isBodyRead(false),
@@ -116,6 +120,10 @@ Request::Request() :
     _boundaryBody(NULL),
     _headers(),
     _cookies(),
+    _config(),
+    _servers(),
+    _bodySize(0),
+    _error(0),
     _keepAlive(1),
     _isHeadersRead(false),
     _clientSocket(-1),
@@ -264,9 +272,6 @@ std::map<std::string, std::string> getboundaryHeaders(std::string headers)
             return _headers;
         _headers[_key] = headers.substr(_headerkeyPos + 2, _headerValuePos - _headerkeyPos - 2);
         _hpos = _headerValuePos + 2;
-
-        // use this comment to print the headers of the boundary body (for debugging)
-        // std::cout << '$' << _key << "$ : " << '$' << _headers[_key]  << "$" << std::endl;
     }
     return _headers;
 }
@@ -288,16 +293,38 @@ void Request::getChunkedBody(size_t &_bodyPos)
         i += chunkIntValue + 1;
     }
 }
+// find the config of the request if there is multiple servers
+void    Request::findConfig()
+{
+    // check if the host is found in the headers map
+    if (_headers.find("Host") != _headers.end())
+    {
+        std::string host = _headers["Host"];
+        for (std::vector<ServerConf>::iterator it = _servers.begin(); it != _servers.end(); it++)
+        {
+            // check if the host is found in the servers vector
+            if (it->getString(SERVER_NAME) == host)
+            {
+                _config = *it;
+                return;
+            }
+        }
+    }
+    _config = _servers[0];
+}
+
 void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
 {
+    this->findConfig();
     size_t filenamePos = headBoundaryBody->headers["Content-Disposition"].find("filename");
     if (filenamePos == std::string::npos)
     {
         headBoundaryBody->filename = "";
         headBoundaryBody->_isFile = false;
     }
-    else 
+    else if (_bodySize <= _config.getNum(BODY_SIZE))
     {
+
         headBoundaryBody->filename = headBoundaryBody->headers["Content-Disposition"].substr(filenamePos + 10, \
         headBoundaryBody->headers["Content-Disposition"].length() - filenamePos - 11);
         headBoundaryBody->_isFile = true;
@@ -311,6 +338,8 @@ void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
             file.close();
         }
     }
+    else 
+        _error = 413;
 }
 
 void Request::getBoundaries(size_t &_bodyPos)
@@ -340,7 +369,10 @@ void Request::parsseBody(size_t &_bodyPos)
 {
     // check if the body is found in the headers map and if the body is not empty and not chunked
     if (_headers.find("Content-Length") != _headers.end())
-    {
+    {  
+        std::istringstream iss(_headers["Content-Length"]);
+        if (!(iss >> _bodySize)) // convert the body size from string to long long
+            _bodySize = 0;
         // check if the body is a multipart/form-data request and if the boundary is found in the headers map
         if(_headers.find("Content-Type") != _headers.end() \
         && _headers["Content-Type"].find("multipart/form-data") != std::string::npos \
@@ -351,14 +383,15 @@ void Request::parsseBody(size_t &_bodyPos)
         }
         // check if the body is a urlencoded request
         else
-        _body = _request.substr(_bodyPos + 4 , std::atoi(_headers["Content-Length"].c_str()));
+        _body = _request.substr(_bodyPos + 4 , _bodySize);
     }
     else if (_headers.find("Transfer-Encoding") != _headers.end() \
     && _headers["Transfer-Encoding"].find("chunked") != std::string::npos) // chunked request body
     {
         getChunkedBody(_bodyPos);
+        _bodySize = _body.size();
     }
-    // std::cout <<_body << std::endl;
+    std::cout <<_body << std::endl;
 }
 void freeBoundaryBody(BoundaryBody *head)
 {

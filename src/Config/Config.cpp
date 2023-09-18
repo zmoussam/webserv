@@ -112,7 +112,6 @@ std::map<int , std::string> ServerConf::getErrorPages() const {
     return this->_errorPages;
 }
 
-
 void ServerConf::setString(std::string type, std::string value)
 {
     if (type == "server_name")

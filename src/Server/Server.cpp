@@ -108,7 +108,7 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
             return ERROR;
         }
         _clients.push_back(clientSocket);
-        _requests[clientSocket] = Request(clientSocket);
+        _requests[clientSocket] = Request(clientSocket, _serverConf);
         _responses[clientSocket] = Response(clientSocket, _serverConf);
         _cgis[clientSocket] = CGI();
     }

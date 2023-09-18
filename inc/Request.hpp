@@ -6,7 +6,7 @@
 /*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/04 14:19:07 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/09/18 16:32:13 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include <vector>
 #include "Macros.hpp"
 #include "Utils.hpp"
+#include "Config.hpp"
 #include <cstdlib>
 struct BoundaryBody
 {
@@ -46,6 +47,10 @@ class Request
         BoundaryBody *_boundaryBody;
         std::map<std::string, std::string> _headers;
         std::map<std::string , std::string> _cookies;
+        ServerConf _config;
+        std::vector<ServerConf> _servers;
+        size_t _bodySize;
+        int _error;
         bool _keepAlive;
 		bool _isHeadersRead;
         int _clientSocket;
@@ -77,10 +82,11 @@ class Request
         void getChunkedBody(size_t &_bodyPos);
         void getBoundaries(size_t &_bodyPos);
         size_t countboundaries(size_t _bodyPos);
+        void findConfig();
         void creatUploadFile(BoundaryBody *headBoundaryBody);
         void parsseCookies();
         Request();
-        Request(int clientSocket);
+        Request(int clientSocket, std::vector<ServerConf> servers);
         Request(const Request & other);
         Request &operator=(const Request & other);
         ~Request();
