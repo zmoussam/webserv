@@ -3,9 +3,10 @@
 # include "Response.hpp"
 # include <fcntl.h>
 
-#define E500 "Error: internal server error"
-#define E404 "Error: not found"
-#define E405 "Error: method not allowed"
+#define E500 300
+#define E404 204
+#define E405 205
+#define RESET_ERROR_CODE 410
 
 class Response;
 class Request;
