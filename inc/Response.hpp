@@ -30,7 +30,8 @@ class Response
 		std::string checkFilePath(Request &req);
 		void		handleDefaultError(Request &req);
 		int		sendError(std::string &root, std::map<int, std::string> &errpages);
-		int		sendResp(Request &req, int fd);
+		int		sendResp(Request &req, CGI *cgi);
+		int    createUploadedfiles(Request &req, ServerConf &config);
 		int		findRouting(Request &req);
 		void	findStatusCode(Request &req);
 		void 	setSocket(int clientSocket) { _clientSocket = clientSocket; }
@@ -73,6 +74,7 @@ class Response
 		std::map <int, std::string> _errorPages;
 		bool	_isTextStream;
 		std::string _redirect;
+		CGI *_cgi;
 };
 
 std::string getContentType(std::string filename);
