@@ -33,6 +33,7 @@ class ServerConf {
         bool _autoindex;
         std::string _root;
         std::string _index;
+        std::string _uploadPath;
         std::map<int , std::string> _errorPages;
         std::vector<std::string> _methods;
 

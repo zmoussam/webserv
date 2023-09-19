@@ -16,6 +16,7 @@ class Parser {
         bool parseAutoindex();
         size_t parseNumRules(std::string type);
         std::string parseStringRules(std::string type);
+        std::string parseUploadPath(std::string value);
         std::map<int , std::string> parseErrorPage();
         std::string parseReturned();
         std::vector<std::string> parseMethods();

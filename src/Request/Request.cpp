@@ -328,7 +328,7 @@ void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
         headBoundaryBody->filename = headBoundaryBody->headers["Content-Disposition"].substr(filenamePos + 10, \
         headBoundaryBody->headers["Content-Disposition"].length() - filenamePos - 11);
         headBoundaryBody->_isFile = true;
-        std::ofstream file(("upload/" + headBoundaryBody->filename).c_str());
+        std::ofstream file((_config.getString(UPLOAD_PATH) + headBoundaryBody->filename).c_str());
         if (!file) {
             std::cout << "Failed to open the file!" << std::endl;
         }

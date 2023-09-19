@@ -18,6 +18,7 @@
 #define AUTO_INDEX "autoindex"
 #define REDIRECT "return"
 #define COMPILER "compiler"
+#define UPLOAD_PATH "upload_path"
 
 #define unused(x) (void)(x)
 #define ERROR -1

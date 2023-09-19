@@ -134,12 +134,6 @@ std::vector<std::string> Parser::parseMethods()
             throw std::runtime_error(NOT_VALID);
         methods.push_back(args[i]);
     }
-    // for (size_t i = 0; i < args.size(); i++) {
-    //     if (args[i] == "GET" || args[i] == "POST" || args[i] == "DELETE")
-    //         methods.push_back(args[i]);
-    //     else
-    //         throw std::runtime_error(NOT_VALID);
-    // }
     return methods;
 }
 
@@ -195,6 +189,14 @@ Location Parser::parseLocation() {
     return location;
 }
 
+std::string Parser::parseUploadPath(std::string value) {
+    if (value[0] != '/')
+        value = "/" + value;
+    if (value[value.size() - 1] != '/')
+        value += "/";
+    return value;
+}
+
 ServerConf Parser::parseServerBody() {
     ServerConf server;
 
@@ -216,9 +218,9 @@ ServerConf Parser::parseServerBody() {
         else if (look("autoindex"))
             server.setAutoindex(parseAutoindex());
         else if (look("allow_methods"))
-        {
             server.setMethods(parseMethods());
-        }
+        else if (look("upload_path"))
+            server.setString(UPLOAD_PATH, parseUploadPath(parseStringRules(UPLOAD_PATH)));
         else if (look("location"))
             server.location.push_back(parseLocation());
         else

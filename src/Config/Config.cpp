@@ -12,8 +12,9 @@ ServerConf::ServerConf() {
     this->_host = "127.0.0.1";
     this->_serverName = "";
     this->_listen = 0;
-    this->_root = "";
+    this->_root = "./www";
     this->_index = "";
+    this->_uploadPath = "";
     this->_errorPages = std::map<int , std::string>();
     this->_methods = std::vector<std::string>();
 }
@@ -37,6 +38,7 @@ ServerConf::ServerConf(const ServerConf &copy)
     this->_errorPages = copy._errorPages;
     this->location = copy.location;
     this->_methods = copy._methods;
+    this->_uploadPath = copy._uploadPath;
 }
 
 ServerConf &ServerConf::operator=(const ServerConf &copy)
@@ -51,6 +53,7 @@ ServerConf &ServerConf::operator=(const ServerConf &copy)
     this->_errorPages = copy._errorPages;
     this->location = copy.location;
     this->_methods = copy._methods;
+    this->_uploadPath = copy._uploadPath;
     return *this;
 }
 
@@ -122,6 +125,8 @@ void ServerConf::setString(std::string type, std::string value)
         this->_root = value;
     else if (type == "index")
         this->_index = value;
+    else if (type == "upload_path")
+        this->_uploadPath = value;
 }
 
 void ServerConf::setNum(std::string type, size_t value)
@@ -142,6 +147,8 @@ std::string ServerConf::getString(std::string type) const
         return this->_root;
     else if (type == "index")
         return this->_index;
+    else if (type == "upload_path")
+        return (this->_root + this->_uploadPath);
     return "";
 }
 
