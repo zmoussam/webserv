@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lsabik <lsabik@student.42.fr>              +#+  +:+       +#+        */
+/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/19 14:55:36 by lsabik           ###   ########.fr       */
+/*   Updated: 2023/09/19 16:17:54 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,6 +69,7 @@ class Request
         std::string getPath() const;
         std::string getMethod() const;
         std::string getQueries() const;
+        BoundaryBody *getBoundaryBody() const {return _boundaryBody;}
         bool KeepAlive() const;
         std::map<std::string, std::string> getHeaders() const;
         std::map<std::string, std::string> getCookies() const;

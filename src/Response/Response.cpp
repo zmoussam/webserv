@@ -119,7 +119,6 @@ int Response::findRouting(Request &req)
             {
                 _filePath = constructFilePath(relativePath, _root, "");
                 _isTextStream = true;
-                std::cout << _filePath << std::endl;
                 return CONTINUE;
             }
             return CONTINUE;
@@ -163,7 +162,7 @@ void Response::handleError(Request &req)
         _fileSize = 0;
         _isTextStream = true;
     }
-    else if (_error == 404 || _error == 405 || _error == 501 || _error == 500 || _error == 505)
+    else
     {
         if (_errorPages.empty())
         {
@@ -206,7 +205,7 @@ void Response::genListing()
     std::string location = _location.getLocationName();
     std::string pathName;
     if (!location.empty())
-        pathName = location + "/";
+        pathName = location + findDirname(path, _root) + "/";
     else
         pathName = findDirname(path, _root) + "/";
     if (pathName.empty())
@@ -233,6 +232,8 @@ void Response::genListing()
 void Response::InitFile(Request &req)
 {
     int routing = findRouting(req);
+    if (createUploadedfiles(req, _config) == DONE )
+        return ;
     if (routing == 404)
     {
         handleError(req);
@@ -451,12 +452,43 @@ void    Response::findConfig(Request &req)
     _config = _servers[0];
 }
 
-int Response::sendResp(Request &req, int fdcgi)
+int    Response::createUploadedfiles(Request &req, ServerConf &config) {
+    BoundaryBody *boundaryBody = req.getBoundaryBody();
+    std::string uploadPath = config.getString(UPLOAD_PATH);
+    if (boundaryBody && req.getMethod() == "POST") {
+        for (BoundaryBody *body = boundaryBody; body != NULL; body = body->next)
+        {
+            if (body->_isFile == true)
+            {
+                std::string filePath = uploadPath + body->filename;
+                int fd = open(filePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+                if (fd == -1)
+                {
+                    _error = 500;
+                    handleError(req);
+                    if (_fd == -1)
+                    {
+                        handleDefaultError(req);
+                        return DONE;
+                    }
+                    return DONE;
+                }
+                write(fd, body->_body.c_str(), body->_body.length());
+                close(fd);
+            }
+        }
+    }
+    return CONTINUE;
+}
+
+int Response::sendResp(Request &req, CGI *cgi)
 {
     findConfig(req);
-    if (fdcgi > 0)
+    
+    _cgi = cgi;
+    if (_cgi)
     {
-        _fd = fdcgi;
+        _fd = _cgi->_fd;
         _isCGI = true;
         return sendFileData();
     }
