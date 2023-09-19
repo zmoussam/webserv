@@ -28,12 +28,12 @@ class ServerConf {
         size_t _bodySize;
         std::string _host;
         std::string _serverName;
+        std::string _uploadPath;
         size_t _listen;
     protected:
         bool _autoindex;
         std::string _root;
         std::string _index;
-        std::string _uploadPath;
         std::map<int , std::string> _errorPages;
         std::vector<std::string> _methods;
 

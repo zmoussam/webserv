@@ -25,10 +25,14 @@ class CGI {
         void initHeaders();
         bool isCgiRan() const {return _cgiRan;}
         bool isCgiDone() const {return _isCgiDone;}
+        std::map<std::string, std::string> getHeaders() const {return _headers;}
+        std::string getCgiFd() const {return _cgifd;}
+        int getError() const {return _error_code;}
+        int getFd() const {return _fd;}
         void findConfig(Request &req);
+    private:
         int _fd;
         std::string _cgifd;
-    private:
         std::vector<ServerConf> _servers;
         std::string _filename;
         bool _headersSent;

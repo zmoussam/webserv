@@ -2,7 +2,8 @@
 
 import cgi
 form = cgi.FieldStorage()
-
+while True:
+    continue
 if 'm' in form and 'n' in form:
     try:
         multiplicand1 = int(form['m'].value)
