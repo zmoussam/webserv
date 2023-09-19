@@ -124,6 +124,7 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
                 _clients.erase(_clients.begin() + i);
                 _responses.erase(clientSocket);
                 _requests.erase(clientSocket);
+                unlink(_cgis[clientSocket]._cgifd.c_str());
                 _cgis.erase(clientSocket);
                 i--;
                 req = 0;
@@ -148,6 +149,7 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
                 _clients.erase(_clients.begin() + i);
                 _responses.erase(clientSocket);
                 _requests.erase(clientSocket);
+                unlink(_cgis[clientSocket]._cgifd.c_str());
                 _cgis.erase(clientSocket);
                 i--;
                 res = 0;

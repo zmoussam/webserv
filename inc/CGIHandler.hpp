@@ -45,4 +45,6 @@ class CGI {
         std::string _compiler;
         std::map<std::string, std::string> _headers;
         std::vector<std::string> _methods;
+        int _pid;
+        int _status;
 };

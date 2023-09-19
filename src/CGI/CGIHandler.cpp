@@ -11,6 +11,8 @@ CGI::CGI()
   _isCgiDone = false;
   _cgiRan = false;
   _fd = 0;
+  _pid = 0;
+  _status = 0;
 }
 
 CGI::CGI(int clientSocket, std::vector<ServerConf> &servers) : _servers(servers)
@@ -205,13 +207,20 @@ int CGI::executeCGIScript(int clientSocket) {
 
 int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
 {
-  int status = 0;
-  int pid = 0;
+
   if (_cgiRan == false) {
-    _cgifd = "/tmp/" + std::to_string(getpid()) + ".cgi";
+    int random = open("/dev/random", O_RDONLY);
+    if (random == -1) {
+      _error_code = 500;
+      checkStatusCode();
+      return (CONTINUE);
+    }
+    read(random, &random, sizeof(random));
+    close(random);
+    _cgifd = "/tmp/" + std::to_string(random) + ".cgi";
+    _pid = fork();
     _fd = open(_cgifd.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
-    pid = fork();
-    if (pid == 0) {
+    if (_pid == 0) {
       if (initializeCGIParameters(req, resp) != 0)
         exit (_error_code);
       if (handlePostMethod(req) != 0)
@@ -228,14 +237,14 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
       setenv("REDIRECT_STATUS", "", 1);
       if (executeCGIScript(clientSocket) != 0)
         exit (_error_code);
-      std::cout << "wa exita\n";
+      std::cout << "wa exita with code: " << _error_code << std::endl;
       exit(DONE);
     }
   }
-  if (waitpid(pid, &status, WNOHANG) == -1)
+  if (waitpid(_pid, &_status, WNOHANG) == -1)
   {
-      if (WIFEXITED(status)) {
-        status = WEXITSTATUS(status);
+      if (WIFEXITED(_status)) {
+        _status = WEXITSTATUS(_status);
       _isCgiDone = true;
       checkStatusCode();
       if (_fd == -1) {
