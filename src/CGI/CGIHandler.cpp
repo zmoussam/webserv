@@ -225,20 +225,22 @@ int CGI::executeCGIScript(int clientSocket) {
     std::string body;
     while (fgets(buffer, sizeof(buffer), pipe) != NULL)
         body += buffer;
-    std::string::size_type pos = body.find("\r\n\r\n");
-    if (pos != std::string::npos)
+    if (body.find("Set-Cookie:") != std::string::npos)
     {
-      int fd = open(COOKIFILE, O_RDWR | O_CREAT | O_TRUNC, 0666);
-      if (fd == -1) {
-        _error_code = E500;
-        return -1;
+      std::string::size_type pos = body.find("\r\n\r\n");
+      if (pos != std::string::npos)
+      {
+        int fd = open(COOKIFILE, O_RDWR | O_CREAT | O_TRUNC, 0666);
+        if (fd == -1) {
+          _error_code = E500;
+          return -1;
+        }
+        std::string tmp = body.substr(0, pos);
+        tmp += "\r\n\r\n";
+        write(fd, tmp.c_str(), tmp.size());
+        close(fd);
+        body.erase(0, pos + 4);
       }
-      //add \0 to the end of the string
-      std::string tmp = body.substr(0, pos);
-      tmp += "\r\n\r\n";
-      write(fd, tmp.c_str(), tmp.size());
-      close(fd);
-      body.erase(0, pos + 4);
     }
     pclose(pipe);
   
@@ -295,8 +297,10 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
       (_error_code = RESET_ERROR_CODE + _status) && _error_code == RESET_ERROR_CODE ? _error_code = 0 : _error_code;
       _isCgiDone = true;
       int fd = open(COOKIFILE, O_RDONLY);
-      if (fd != -1)
+      if (access(COOKIFILE, F_OK) != -1)
       {
+        if (fd == -1)
+          _error_code = 500;
         char buffer[128];
         std::string body = "";
         while (read(fd, buffer, sizeof(buffer)) != 0)
@@ -306,7 +310,7 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
         close(fd);
         unlink(COOKIFILE);
       }
-      if (_fd == -1 || fd == -1)
+      if (_fd == -1)
         _error_code = 500;
     }
     else
