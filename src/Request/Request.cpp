@@ -94,7 +94,7 @@ Request::Request(int clientSocket, std::vector<ServerConf> servers) :
     _boundary(""),
     _boundaryBody(NULL),
 	_headers(),
-	_cookies(),
+	_cookies(""),
     _config(),
     _servers(servers),
     _bodySize(0),
@@ -119,7 +119,7 @@ Request::Request() :
     _boundary(""),
     _boundaryBody(NULL),
     _headers(),
-    _cookies(),
+    _cookies(""),
     _config(),
     _servers(),
     _bodySize(0),
@@ -208,6 +208,17 @@ void Request::parsseHeaders(size_t &_hpos)
         // use this comment to print the headers of the request (for debugging)
         // std::cout << '$' << _key << "$ : " << '$' << this->_headers[_key]  << "$" << std::endl;
     }
+    if (_headers.find("Cookie") != _headers.end()) { 
+        _cookies = _headers["Cookie"];
+        _headers.erase("Cookie");
+    }
+    else if(_headers.find("Cookies") != _headers.end()) {
+        _cookies = _headers["Cookies"];
+        _headers.erase("Cookies");
+    }
+    else 
+        _cookies = "";
+
 }
 
 // parse the cookies of the request and fill the cookies map

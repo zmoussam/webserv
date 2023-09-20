@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/20 16:00:35 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/09/20 16:10:21 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,10 +69,11 @@ class Request
         std::string getPath() const;
         std::string getMethod() const;
         std::string getQueries() const;
+        std::string getCookies() const {return _cookies;}
         BoundaryBody *getBoundaryBody() const {return _boundaryBody;}
         bool KeepAlive() const;
         std::map<std::string, std::string> getHeaders() const;
-        std::map<std::string, std::string> getCookies() const;
+        // std::map<std::string, std::string> getCookies() const;
         int getError() const {return _error;}
         void readRequest(int client_socket);
         void parsseRequest();

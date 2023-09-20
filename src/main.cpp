@@ -37,12 +37,8 @@ int main(int ac, char **av) {
         readSet = masterSet;
         writeSet = masterSet;
         int selectRes = select(FD_SETSIZE, &readSet, &writeSet, NULL, NULL);
-        if (selectRes == 0) {
+        if (selectRes <= 0) {
             continue;
-        }
-        if (selectRes < 0) {
-            std::cerr << "Error: select() failed" << std::endl;
-            return ERROR;
         }
         for (size_t i = 0; i < servers.size(); i++) {
             servers[i].handleClients(readSet, writeSet, masterSet);

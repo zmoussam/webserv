@@ -75,10 +75,6 @@ std::map<std::string, std::string> Request::getHeaders() const
     return this->_headers;
 }
 
-std::map<std::string, std::string> Request::getCookies() const
-{
-    return this->_cookies;
-}
 
 bool Request::isHeadersRead() const {
 	return _isHeadersRead;

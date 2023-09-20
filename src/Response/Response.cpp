@@ -483,7 +483,6 @@ int    Response::createUploadedfiles(Request &req, ServerConf &config) {
 int Response::sendResp(Request &req, CGI *cgi)
 {
     findConfig(req);
-    
     _cgi = cgi;
     if (_cgi)
     {
