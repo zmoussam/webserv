@@ -336,6 +336,7 @@ void Response::InitHeaders(Request &req)
     if (!_redirect.empty())
     {
         _headers["Location"] = _redirect;
+        _error = 301;
     }
     ss << _fileSize;
     _headers["Content-Length"] = ss.str();
@@ -345,19 +346,6 @@ void Response::InitHeaders(Request &req)
 #ifdef __APPLE__
 int Response::sendFileData()
 {
-    if (_headersSent == false && _isCGI == true)
-    {
-        _fileSize = lseek(_fd, 0, SEEK_END);
-        lseek(_fd, 0, SEEK_SET);
-        std::string body ="HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Type: text/html\r\nServer: Webserv/1.0\r\nContent-Length: " + std::to_string(_fileSize) + "\r\n\r\n";
-        ssize_t bytesSent = send(_clientSocket, body.c_str(), strlen(body.c_str()), 0);
-     if (bytesSent == -1)
-     {
-         std::cout << "error" << std::endl;
-         return ERROR;
-     }
-        _headersSent = true;
-    }
     off_t bytesSent = 1024;
     int res = sendfile(_fd, _clientSocket, _offset, &bytesSent, NULL, 0);
     if (res == -1 && _offset >= _fileSize)
@@ -484,13 +472,16 @@ int    Response::createUploadedfiles(Request &req, ServerConf &config) {
 int Response::sendResp(Request &req, CGI *cgi)
 {
     findConfig(req);
-    
     _cgi = cgi;
     if (_cgi)
     {
-        _fd = _cgi->_fd;
+        _fd = _cgi->getFd();
+        _error = _cgi->getError();
+        _headers = _cgi->getHeaders();
         _isCGI = true;
-        return sendFileData();
+         _fileSize = lseek(_fd, 0, SEEK_END);
+        lseek(_fd, 0, SEEK_SET);
+        _headers["Content-Length"] = std::to_string(_fileSize);
     }
     std::stringstream ss;
     if (_fd == 0 && _isCGI == false)
@@ -500,6 +491,7 @@ int Response::sendResp(Request &req, CGI *cgi)
     }
     if (_headersSent == false)
     {
+        findStatusCode(req);
         ss << "HTTP/1.1 " << _status_code << "\r\n";
         for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++)
         {
@@ -510,13 +502,12 @@ int Response::sendResp(Request &req, CGI *cgi)
         send(_clientSocket, _buffer.c_str(), _buffer.length(), 0);
         _headersSent = true;
     }
+    //if location in header is not empty, then redirect
+    if (_redirect.empty() == false)
+        return DONE;
     if (_isTextStream)
         return sendTextData();
     else
         return sendFileData();
-    // } catch (std::exception &e) {
-    //     std::cout << e.what() << std::endl;
-    //     return DONE;
-    // }
     return CONTINUE;
 }

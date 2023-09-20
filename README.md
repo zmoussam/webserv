@@ -6,10 +6,8 @@ A recreation of Nginx and Apache webservers in C++
 
 - [x] Add I/O Multiplexing
 - [x] HTTP Request Parsing
-- [X] HTTP Response Generation
-- [X] GET, POST, DELETE methods support
-- [X] CGI support
-- [ ] Multi CGI support
+- [ ] HTTP Response Generation
+- [ ] GET, POST, DELETE methods support
 - [ ] [Evaluation tests](https://htmlpreview.github.io/?https://github.com/rphlr/42-Evals/blob/main/Rank05/webserv/index.html)
 
 

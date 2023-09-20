@@ -12,7 +12,7 @@ ServerConf::ServerConf() {
     this->_host = "127.0.0.1";
     this->_serverName = "";
     this->_listen = 0;
-    this->_root = "./www";
+    this->_root = "";
     this->_index = "";
     this->_uploadPath = "";
     this->_errorPages = std::map<int , std::string>();
