@@ -82,10 +82,12 @@ int CGI::initializeCGIParameters(Request &req, Response &resp) {
   if (extension.empty())
   {
     _error_code = 500;
-    return -1;
+    return 2;
   }
   while (it != resp._config.location.end())
   {
+    if (it->getLocationName().empty())
+      return -2;
     std::string cgiLocation = it->getLocationName().erase(0, 1);
     if (cgiLocation == extension)
     {
@@ -108,15 +110,15 @@ int CGI::initializeCGIParameters(Request &req, Response &resp) {
   if (it_meth == _methods.end())
   {
     _error_code = 405;
-    return -1;
+    return 2;
   }
   if (_compiler.empty())
   {
     _error_code = 500;
-    return -1;
+    return 2;
   }
   initHeaders();
-  return _error_code;
+  return 0;
 }
 
 std::map<std::string, std::string> CGI::getCookies() const {
@@ -161,17 +163,20 @@ std::map<std::string, std::string> CGI::parseCookies(std::string cookisat)
   return _cookies;
 }
 
-// void CGI::parseHeaders(std::string headers)
-// {
-//   std::string headerKey = "";
-//   if (headers.find("Content-type") != std::string::npos)
-//   {
-//     std::string::size_type pos = headers.find("Content-Length");
-//     std::string::size_type pos2 = headers.find("\r\n", pos);
-//     std::string content_length = headers.substr(pos + 16, pos2 - pos - 16);
-//     _headers["Content-Length"] = content_length;
-//   }
-// }
+void CGI::parseHeaders(std::string headers)
+{
+  std::string headerKey[5] = {"Content-type", "Content-length", "Location", "Server", "Connection"};
+  for (int i = 0; i < 5; i++)
+  {
+    if (headers.find(headerKey[i]) != std::string::npos)
+    {
+      std::string::size_type pos = headers.find(headerKey[i]);
+      std::string::size_type pos2 = headers.find("\r\n", pos);
+      std::string value = headers.substr(pos + headerKey[i].length() + 1, pos2 - pos - headerKey[i].length() - 1);
+      _headers[headerKey[i]] = value;
+    }
+  }
+}
 
 int CGI::handlePostMethod(Request &req) {
   if (req.getMethod() == "POST")
@@ -223,12 +228,20 @@ int CGI::executeCGIScript(int clientSocket) {
     std::string::size_type pos = body.find("\r\n\r\n");
     if (pos != std::string::npos)
     {
-      _cookies = parseCookies(body.substr(0, pos));
-      parseHeaders(body.substr(0, pos));
+      int fd = open(COOKIFILE, O_RDWR | O_CREAT | O_TRUNC, 0666);
+      if (fd == -1) {
+        _error_code = E500;
+        return -1;
+      }
+      //add \0 to the end of the string
+      std::string tmp = body.substr(0, pos);
+      tmp += "\r\n\r\n";
+      write(fd, tmp.c_str(), tmp.size());
+      close(fd);
       body.erase(0, pos + 4);
     }
     pclose(pipe);
-    
+  
     if (_fd != -1) {
         write(_fd, body.c_str(), body.size());
     } else {
@@ -237,7 +250,6 @@ int CGI::executeCGIScript(int clientSocket) {
     }
     return 0;
 }
-
 int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
 {
   if (_cgiRan == false) {
@@ -250,16 +262,18 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
     close(random);
     _cgifd = "/tmp/" + std::to_string(random) + ".cgi";
     _pid = fork();
-      if (initializeCGIParameters(req, resp) != 0)
-      {
-        _isCgiDone = true;
-        return (DONE);
-      }
+    int res = initializeCGIParameters(req, resp);
+    if (res != 0)
+    {
+      _isCgiDone = true;
+      return (res);
+    }
     _fd = open(_cgifd.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (_pid == 0) {
       if (handlePostMethod(req) != 0)
         exit (_error_code);
-      setenv("HTTP_COOKIE", req.getCookies().c_str(), 1);
+      if (req.getCookies().size() > 0)
+        setenv("HTTP_COOKIE", req.getCookies().c_str(), 1);
       setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
       setenv("REQUEST_URI", req.getPath().c_str(), 1);
       setenv("QUERY_STRING", req.getQueries().c_str(), 1);
@@ -280,9 +294,20 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
         _status = WEXITSTATUS(_status);
       (_error_code = RESET_ERROR_CODE + _status) && _error_code == RESET_ERROR_CODE ? _error_code = 0 : _error_code;
       _isCgiDone = true;
-      if (_fd == -1) {
-        _error_code = 500;
+      int fd = open(COOKIFILE, O_RDONLY);
+      if (fd != -1)
+      {
+        char buffer[128];
+        std::string body = "";
+        while (read(fd, buffer, sizeof(buffer)) != 0)
+          body += buffer;
+        _cookies = parseCookies(body.substr(0, body.find("\r\n\r\n")));
+        parseHeaders(body.substr(0, body.find("\r\n\r\n")));
+        close(fd);
+        unlink(COOKIFILE);
       }
+      if (_fd == -1 || fd == -1)
+        _error_code = 500;
     }
     else
       return (CONTINUE);

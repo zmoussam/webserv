@@ -487,7 +487,7 @@ int Response::sendResp(Request &req, CGI *cgi)
 {
     findConfig(req);
     _cgi = cgi;
-    if (_cgi)
+    if (_cgi && _cgi->isCgiDone() == true)
     {
         _fd = _cgi->getFd();
         _error = _cgi->getError();
@@ -498,11 +498,15 @@ int Response::sendResp(Request &req, CGI *cgi)
                 handleDefaultError(req);
         }
         else {
-            _headers = _cgi->getHeaders();
             _isCGI = true;
             _fileSize = lseek(_fd, 0, SEEK_END);
             lseek(_fd, 0, SEEK_SET);
             _headers["Content-Length"] = std::to_string(_fileSize);
+            _headers = _cgi->getHeaders();
+            std::map<std::string, std::string> cookies = _cgi->getCookies();
+            for (std::map<std::string, std::string>::iterator it = cookies.begin(); it != cookies.end(); it++)
+                _headers["Set-Cookie"] = it->first + "=" + it->second;
+            
         }
     }
     std::stringstream ss;
@@ -514,9 +518,6 @@ int Response::sendResp(Request &req, CGI *cgi)
     if (_headersSent == false)
     {
         findStatusCode(req);
-        //cookies
-        // if (!req.getCookies().empty())
-        
         ss << "HTTP/1.1 " << _status_code << "\r\n";
         for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++)
         {
@@ -527,7 +528,6 @@ int Response::sendResp(Request &req, CGI *cgi)
         send(_clientSocket, _buffer.c_str(), _buffer.length(), 0);
         _headersSent = true;
     }
-    //if location in header is not empty, then redirect
     if (_redirect.empty() == false)
         return DONE;
     if (_isTextStream)

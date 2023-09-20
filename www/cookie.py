@@ -11,8 +11,6 @@ if cookie_string:
     color = cookie_string[index+1:]
 else:
     color = "white"
-print("Content-type:text/html\r\n")
-print("Set-Cookie:color=%s;name=lina;lasme=lieerna\r\n\r\n" % (color))
 # access the value of a cookie named "my_cookie"
 # Create instance of FieldStorage 
 form = cgi.FieldStorage()
@@ -24,6 +22,9 @@ form = cgi.FieldStorage()
 if form.getvalue('color') and form.getvalue('color') != color:
     color = form.getvalue('color')
 
+print("Server:python3.6.5\r\n")
+print("Content-Type:text/html\r\n")
+print("Set-Cookie:color=%s\r\n\r\n" % (color))
 bodystring = "<html><head><body style=\"background-color: %s;\"></head><body>" % (color)
 bodystring += "<h1>Welcome to my page</h1>"
 bodystring += "<form method=\"GET\" action=\"cookie.py\">"

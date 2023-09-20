@@ -7,6 +7,7 @@
 #define E404 204
 #define E405 205
 #define RESET_ERROR_CODE 200
+#define COOKIFILE "/tmp/cookie.txt" 
 
 class Response;
 class Request;
@@ -27,6 +28,7 @@ class CGI {
         void initHeaders();
         bool isCgiRan() const {return _cgiRan;}
         bool isCgiDone() const {return _isCgiDone;}
+        void setisCgiDone(bool isCgiDone) {_isCgiDone = isCgiDone;} 
         std::map<std::string, std::string> getHeaders() const {return _headers;}
         std::string getCgiFd() const {return _cgifd;}
         int getError() const {return _error_code;}

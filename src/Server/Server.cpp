@@ -135,6 +135,7 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
                 res = _cgis[clientSocket].CGIHandler(_requests[clientSocket], _responses[clientSocket], clientSocket);
                 if (_cgis[clientSocket].isCgiDone() == true)
                 {
+                    res == -2 ? _cgis[clientSocket].setisCgiDone(false) : _cgis[clientSocket].setisCgiDone(true);
                     res = _responses[clientSocket].sendResp(_requests[clientSocket], &_cgis[clientSocket]);
                     unlink(_cgis[clientSocket].getCgiFd().c_str());
                 }
