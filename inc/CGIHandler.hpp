@@ -6,7 +6,7 @@
 #define E500 300
 #define E404 204
 #define E405 205
-#define RESET_ERROR_CODE 410
+#define RESET_ERROR_CODE 200
 
 class Response;
 class Request;
@@ -20,6 +20,8 @@ class CGI {
         int initializeCGIParameters(Request &req, Response &resp);
         int  handlePostMethod(Request &req);
         int executeCGIScript(int clientSocket);
+        std::string getCookies() const;
+        std::string parseCookies(std::string cookies);
         void redirectURL();
         void checkStatusCode();
         void initHeaders();
@@ -32,6 +34,7 @@ class CGI {
         void findConfig(Request &req);
     private:
         int _fd;
+        std::string _cookies;
         std::string _cgifd;
         std::vector<ServerConf> _servers;
         std::string _filename;

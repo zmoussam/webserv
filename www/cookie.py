@@ -6,11 +6,13 @@ import cgi, cgitb , html , os
 # parse the HTTP cookies sent by the client
 cookie_string = os.environ.get('HTTP_COOKIE')
 print("cookie_string: ", cookie_string)
+
 if cookie_string:
     index = cookie_string.find("=")
     color = cookie_string[index+1:]
 else:
     color = "white"
+print("|||Cookies: Color= value; Name=lina|||")
 # access the value of a cookie named "my_cookie"
 # Create instance of FieldStorage 
 form = cgi.FieldStorage()

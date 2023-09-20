@@ -13,6 +13,7 @@ CGI::CGI()
   _fd = 0;
   _pid = 0;
   _status = 0;
+  _cookies = "";
 }
 
 CGI::CGI(int clientSocket, std::vector<ServerConf> &servers) : _servers(servers)
@@ -28,6 +29,7 @@ CGI::CGI(int clientSocket, std::vector<ServerConf> &servers) : _servers(servers)
   _isCgiDone = false;
   _cgiRan = false;
   _fd = 0;
+  _cookies = "";
 }
 
 CGI::~CGI()
@@ -120,6 +122,15 @@ int CGI::initializeCGIParameters(Request &req, Response &resp) {
   return _error_code;
 }
 
+std::string CGI::getCookies() const {
+  return _cookies;
+}
+
+// std::string CGI::parseCookies(std::string cookisat)
+// {
+
+// }
+
 int CGI::handlePostMethod(Request &req) {
   if (req.getMethod() == "POST")
   {
@@ -180,7 +191,6 @@ int CGI::executeCGIScript(int clientSocket) {
 
 int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
 {
-
   if (_cgiRan == false) {
     int random = open("/dev/random", O_RDONLY);
     if (random == -1) {
@@ -194,14 +204,13 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
       if (initializeCGIParameters(req, resp) != 0)
       {
         _isCgiDone = true;
-        std::cout << "error code: " << _error_code << std::endl;
         return (DONE);
       }
     _fd = open(_cgifd.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (_pid == 0) {
       if (handlePostMethod(req) != 0)
         exit (_error_code);
-      setenv("HTTP_COOKIE", req.getHeaders()["Cookie"].c_str(), 1);
+      setenv("HTTP_COOKIE", req.getCookies().c_str(), 1);
       setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
       setenv("REQUEST_URI", req.getPath().c_str(), 1);
       setenv("QUERY_STRING", req.getQueries().c_str(), 1);
@@ -221,6 +230,7 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
       if (WIFEXITED(_status)) {
         _status = WEXITSTATUS(_status);
       (_error_code = RESET_ERROR_CODE + _status) && _error_code == RESET_ERROR_CODE ? _error_code = 0 : _error_code;
+      std::cout << "error code: " << _error_code << std::endl;
       _isCgiDone = true;
       if (_fd == -1) {
         _error_code = 500;

@@ -243,6 +243,9 @@ void Response::InitFile(Request &req)
         }
         return ;
     }
+    else 
+        _error = 0;
+    
     if (createUploadedfiles(req, _config) == DONE )
         return ;
     if (routing == 404)
@@ -488,11 +491,19 @@ int Response::sendResp(Request &req, CGI *cgi)
     {
         _fd = _cgi->getFd();
         _error = _cgi->getError();
-        _headers = _cgi->getHeaders();
-        _isCGI = true;
-         _fileSize = lseek(_fd, 0, SEEK_END);
-        lseek(_fd, 0, SEEK_SET);
-        _headers["Content-Length"] = std::to_string(_fileSize);
+        if (_error != 0)
+        {
+            handleError(req);
+            if (_fd == -1)
+                handleDefaultError(req);
+        }
+        else {
+            _headers = _cgi->getHeaders();
+            _isCGI = true;
+            _fileSize = lseek(_fd, 0, SEEK_END);
+            lseek(_fd, 0, SEEK_SET);
+            _headers["Content-Length"] = std::to_string(_fileSize);
+        }
     }
     std::stringstream ss;
     if (_fd == 0 && _isCGI == false)
@@ -503,6 +514,9 @@ int Response::sendResp(Request &req, CGI *cgi)
     if (_headersSent == false)
     {
         findStatusCode(req);
+        //cookies
+        // if (!req.getCookies().empty())
+        
         ss << "HTTP/1.1 " << _status_code << "\r\n";
         for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++)
         {
