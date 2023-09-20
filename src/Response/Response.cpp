@@ -232,6 +232,17 @@ void Response::genListing()
 void Response::InitFile(Request &req)
 {
     int routing = findRouting(req);
+    _error = req.getError();
+    if (_error != 0)
+    {
+        handleError(req);
+        if (_fd == -1)
+        {
+            handleDefaultError(req);
+            return ;
+        }
+        return ;
+    }
     if (createUploadedfiles(req, _config) == DONE )
         return ;
     if (routing == 404)
@@ -472,6 +483,7 @@ int    Response::createUploadedfiles(Request &req, ServerConf &config) {
 int Response::sendResp(Request &req, CGI *cgi)
 {
     findConfig(req);
+    
     _cgi = cgi;
     if (_cgi)
     {

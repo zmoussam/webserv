@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lsabik <lsabik@student.42.fr>              +#+  +:+       +#+        */
+/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/19 20:10:23 by lsabik           ###   ########.fr       */
+/*   Updated: 2023/09/20 13:15:01 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,7 @@ class Request
         bool KeepAlive() const;
         std::map<std::string, std::string> getHeaders() const;
         std::map<std::string, std::string> getCookies() const;
+        int getError() const {return _error;}
         void readRequest(int client_socket);
         void parsseRequest();
         void parsseMethod(size_t &methodPos);
