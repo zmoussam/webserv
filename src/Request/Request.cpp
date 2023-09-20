@@ -12,7 +12,7 @@ int Request::waitForBody(size_t headerlength)
         size_t bodyLength = getBodyLength(_REQ.str().substr(bodyLengthPos + 16, \
         _REQ.str().find("\r\n", bodyLengthPos + 16) - bodyLengthPos - 16));
         std::string  body = _REQ.str().substr(headerlength + 4);
-        if (body.size() == bodyLength) // body is read
+        if (body.size() == bodyLength || body[body.size()] == '\0') // body is read
         {
             _isBodyRead = true;
             _requestLength = _REQ.str().size();
