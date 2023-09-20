@@ -13,7 +13,6 @@ CGI::CGI()
   _fd = 0;
   _pid = 0;
   _status = 0;
-  _cookies = "";
 }
 
 CGI::CGI(int clientSocket, std::vector<ServerConf> &servers) : _servers(servers)
@@ -29,7 +28,6 @@ CGI::CGI(int clientSocket, std::vector<ServerConf> &servers) : _servers(servers)
   _isCgiDone = false;
   _cgiRan = false;
   _fd = 0;
-  _cookies = "";
 }
 
 CGI::~CGI()
@@ -110,7 +108,6 @@ int CGI::initializeCGIParameters(Request &req, Response &resp) {
   if (it_meth == _methods.end())
   {
     _error_code = 405;
-    std::cout << "error code: " << _error_code << std::endl;
     return -1;
   }
   if (_compiler.empty())
@@ -122,13 +119,58 @@ int CGI::initializeCGIParameters(Request &req, Response &resp) {
   return _error_code;
 }
 
-std::string CGI::getCookies() const {
+std::map<std::string, std::string> CGI::getCookies() const {
   return _cookies;
 }
 
-// std::string CGI::parseCookies(std::string cookisat)
-// {
+std::map<std::string, std::string> CGI::parseCookies(std::string cookisat)
+{
+  std::string::size_type pos = cookisat.find("Set-Cookie:");
+  if (pos != std::string::npos)
+  {
+    cookisat.erase(0, pos + 11);
+    for (std::string::size_type i = 0; i < cookisat.size(); i++)
+    {
+      std::string::size_type pos2 = cookisat.find(";");
+      if (pos2 != std::string::npos)
+      {
+        std::string cookie = cookisat.substr(0, pos2);
+        std::string::size_type pos3 = cookie.find("=");
+        if (pos3 != std::string::npos)
+        {
+          std::string key = cookie.substr(0, pos3);
+          std::string value = cookie.substr(pos3 + 1);
+          _cookies[key] = value;
+          cookisat.erase(0, pos2 + 1);
+        }
+      }
+      else
+      {
+        std::string cookie = cookisat.substr(0, cookisat.find("\r\n"));
+        std::string::size_type pos3 = cookie.find("=");
+        if (pos3 != std::string::npos)
+        {
+          std::string key = cookie.substr(0, pos3);
+          std::string value = cookie.substr(pos3 + 1);
+          _cookies[key] = value;
+          break;
+        }
+      }
+    }
+  }
+  return _cookies;
+}
 
+// void CGI::parseHeaders(std::string headers)
+// {
+//   std::string headerKey = "";
+//   if (headers.find("Content-type") != std::string::npos)
+//   {
+//     std::string::size_type pos = headers.find("Content-Length");
+//     std::string::size_type pos2 = headers.find("\r\n", pos);
+//     std::string content_length = headers.substr(pos + 16, pos2 - pos - 16);
+//     _headers["Content-Length"] = content_length;
+//   }
 // }
 
 int CGI::handlePostMethod(Request &req) {
@@ -178,6 +220,13 @@ int CGI::executeCGIScript(int clientSocket) {
     std::string body;
     while (fgets(buffer, sizeof(buffer), pipe) != NULL)
         body += buffer;
+    std::string::size_type pos = body.find("\r\n\r\n");
+    if (pos != std::string::npos)
+    {
+      _cookies = parseCookies(body.substr(0, pos));
+      parseHeaders(body.substr(0, pos));
+      body.erase(0, pos + 4);
+    }
     pclose(pipe);
     
     if (_fd != -1) {
@@ -230,7 +279,6 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
       if (WIFEXITED(_status)) {
         _status = WEXITSTATUS(_status);
       (_error_code = RESET_ERROR_CODE + _status) && _error_code == RESET_ERROR_CODE ? _error_code = 0 : _error_code;
-      std::cout << "error code: " << _error_code << std::endl;
       _isCgiDone = true;
       if (_fd == -1) {
         _error_code = 500;
