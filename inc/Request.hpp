@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/20 13:15:01 by aarbaoui         ###   ########.fr       */
+/*   Updated: 2023/09/20 16:00:35 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ class Request
         std::string _boundary;
         BoundaryBody *_boundaryBody;
         std::map<std::string, std::string> _headers;
-        std::map<std::string , std::string> _cookies;
+        std::string _cookies;
         ServerConf _config;
         std::vector<ServerConf> _servers;
         size_t _bodySize;

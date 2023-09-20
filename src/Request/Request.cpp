@@ -140,7 +140,7 @@ void Request::parsseRequest()
     parsseHTTPversion(nextPos); // parse the HTTP version of the request
     parsseHeaders(nextPos); // parse the headers of the request and fill the headers map
     parsseBody(nextPos); // parse the body of the request and fill the body string
-    parsseCookies(); // parse the cookies of the request and fill the cookies map 
+    // parsseCookies(); // parse the cookies of the request and fill the cookies map 
 
 }
 
@@ -211,35 +211,35 @@ void Request::parsseHeaders(size_t &_hpos)
 }
 
 // parse the cookies of the request and fill the cookies map
-void Request::parsseCookies()
-{
-    std::string _key;
-    std::string _value;
-    std::string Cookies;
-    // check if the cookies are found in the headers map (the key can be "Cookie" or "Cookies" depending on the browser)
-    if (_headers.find("Cookie") != _headers.end() || _headers.find("Cookies") != _headers.end()) {
-        if (_headers.find("Cookie") != _headers.end()) { Cookies = _headers["Cookie"]; }
-        else { Cookies = _headers["Cookies"]; }
-        size_t CookiesLength = Cookies.size();
-        // loop until the end of the cookies is reached
-        for (size_t i = 0; i < CookiesLength; i++) {
-            _key = "" , _value = "";
-            // loop until the end of the key is reached
-            for (; i < CookiesLength && Cookies[i] != '='; i++)
-                if (Cookies[i] != ' ')
-                    _key +=  Cookies[i];
-            i++;
-            // loop until the end of the value is reached
-            for (; i < CookiesLength && Cookies[i] != ';'; i++)
-                if (Cookies[i] != ' ')
-                    _value += Cookies[i];
-            _cookies[_key] = _value; // add the cookie to the cookies map 
-        }
-        // move the cookies from the headers map
-        _headers.erase("Cookie");
-        _headers.erase("Cookies");
-    }
-}
+// void Request::parsseCookies()
+// {
+//     std::string _key;
+//     std::string _value;
+//     std::string Cookies;
+//     // check if the cookies are found in the headers map (the key can be "Cookie" or "Cookies" depending on the browser)
+//     if (_headers.find("Cookie") != _headers.end() || _headers.find("Cookies") != _headers.end()) {
+//         if (_headers.find("Cookie") != _headers.end()) { Cookies = _headers["Cookie"]; }
+//         else { Cookies = _headers["Cookies"]; }
+//         size_t CookiesLength = Cookies.size();
+//         // loop until the end of the cookies is reached
+//         for (size_t i = 0; i < CookiesLength; i++) {
+//             _key = "" , _value = "";
+//             // loop until the end of the key is reached
+//             for (; i < CookiesLength && Cookies[i] != '='; i++)
+//                 if (Cookies[i] != ' ')
+//                     _key +=  Cookies[i];
+//             i++;
+//             // loop until the end of the value is reached
+//             for (; i < CookiesLength && Cookies[i] != ';'; i++)
+//                 if (Cookies[i] != ' ')
+//                     _value += Cookies[i];
+//             _cookies[_key] = _value; // add the cookie to the cookies map 
+//         }
+//         // move the cookies from the headers map
+//         _headers.erase("Cookie");
+//         _headers.erase("Cookies");
+//     }
+// }
 
 // count the number of boundaries in the request
 size_t Request::countboundaries(size_t pos)
