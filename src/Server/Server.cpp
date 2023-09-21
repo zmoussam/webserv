@@ -103,7 +103,7 @@ int Server::addToSets(fd_set& masterSet) {
 int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) {
     if (FD_ISSET(_serverSocket, &readSet)) {
         int clientSocket = accept(_serverSocket, NULL, NULL);
-        if (clientSocket < 0 || clientSocket > 1024) {
+        if (clientSocket < 0) {
             std::cerr << "Error: accept() failed" << std::endl;
             return ERROR;
         }
@@ -118,15 +118,14 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
         if (FD_ISSET(clientSocket, &readSet)) {
             int req = _requests[clientSocket].handleRequest();
             if (req == DISCONNECTED) {
-                std::cout << "Client disconnected in request" << std::endl;
                 FD_CLR(clientSocket, &masterSet);
-                close(clientSocket);
                 _clients.erase(_clients.begin() + i);
                 _responses.erase(clientSocket);
                 _requests.erase(clientSocket);
                 unlink(_cgis[clientSocket].getCgiFd().c_str());
                 _cgis.erase(clientSocket);
                 i--;
+                close(clientSocket);
                 req = 0;
             }
         }
@@ -144,13 +143,13 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
                 res = _responses[clientSocket].sendResp(_requests[clientSocket], NULL);
             if (res == DONE) {
                 FD_CLR(clientSocket, &masterSet);
-                close(clientSocket);
                 _clients.erase(_clients.begin() + i);
                 _responses.erase(clientSocket);
                 _requests.erase(clientSocket);
                 unlink(_cgis[clientSocket].getCgiFd().c_str());
                 _cgis.erase(clientSocket);
                 i--;
+                close(clientSocket);
                 res = 0;
             }
         }

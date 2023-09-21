@@ -12,7 +12,7 @@ int Request::waitForBody(size_t headerlength)
         size_t bodyLength = getBodyLength(_REQ.str().substr(bodyLengthPos + 16, \
         _REQ.str().find("\r\n", bodyLengthPos + 16) - bodyLengthPos - 16));
         std::string  body = _REQ.str().substr(headerlength + 4);
-        if (body.size() == bodyLength || body[body.size()] == '\0') // body is read
+        if (body.size() == bodyLength)
         {
             _isBodyRead = true;
             _requestLength = _REQ.str().size();
@@ -50,7 +50,6 @@ int Request::recvRequest() {
 	int readRes = recv(_clientSocket, buffer, 1024, 0);
     // if recv() failed
 	if (readRes == -1) {
-		std::cerr << "Error: recv() failed" << std::endl;
 		return DONE;
 	}
     // if client disconnected
@@ -77,7 +76,7 @@ int Request::handleRequest() {
     // if the request is received and the body is read
 	if (rcvRes == DONE && _isBodyRead) {
 		parsseRequest(); // parse the request received from the client and fill the request object
-        // std::cout << _request << std::endl;
+        std::cout << "- - " << this->_method << " " << this->_URI << " " << this->_httpVersion << std::endl;
 	}
 	return (0);
 }
@@ -417,7 +416,7 @@ void freeBoundaryBody(BoundaryBody *head)
 Request::~Request()
 {
     // std::cout << "Request destroyed" << std::endl;
-    // freeBoundaryBody(_boundaryBody);
+    freeBoundaryBody(_boundaryBody);
     _headers.clear();
     _queries.clear();
     _cookies.clear();

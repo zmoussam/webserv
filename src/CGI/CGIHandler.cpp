@@ -165,7 +165,7 @@ std::map<std::string, std::string> CGI::parseCookies(std::string cookisat)
 
 void CGI::parseHeaders(std::string headers)
 {
-  std::string headerKey[5] = {"Content-type", "Content-length", "Location", "Server", "Connection"};
+  std::string headerKey[5] = {"Content-Type", "Content-Length", "Location", "Server", "Connection"};
   for (int i = 0; i < 5; i++)
   {
     if (headers.find(headerKey[i]) != std::string::npos)
@@ -225,7 +225,7 @@ int CGI::executeCGIScript(int clientSocket) {
     std::string body;
     while (fgets(buffer, sizeof(buffer), pipe) != NULL)
         body += buffer;
-    if (body.find("Set-Cookie:") != std::string::npos)
+    if (body.find("\r\n\r\n") != std::string::npos)
     {
       std::string::size_type pos = body.find("\r\n\r\n");
       if (pos != std::string::npos)
@@ -255,13 +255,7 @@ int CGI::executeCGIScript(int clientSocket) {
 int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
 {
   if (_cgiRan == false) {
-    int random = open("/dev/random", O_RDONLY);
-    if (random == -1) {
-      _error_code = 500;
-      return (CONTINUE);
-    }
-    read(random, &random, sizeof(random));
-    close(random);
+    int random = rand();
     _cgifd = "/tmp/" + std::to_string(random) + ".cgi";
     _pid = fork();
     int res = initializeCGIParameters(req, resp);

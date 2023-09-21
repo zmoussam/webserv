@@ -213,14 +213,10 @@ void Response::genListing()
     else
         ss << "<html><head><title>Index of " << pathName << "</title></head><body bgcolor=\"white\"><h1>Index of " << pathName << "</h1><hr><pre>";
 
-    if ((dir = opendir(path.c_str())) != NULL)
+    if (dir)
     {
         while ((ent = readdir(dir)) != NULL)
-        {
-            if (ent->d_name[0] == '.' && !ent->d_name[1])
-                continue;
             ss << "<a href=\"" << pathName << ent->d_name << "\">" << ent->d_name << "</a><br>";
-        }
         closedir(dir);
     }
     ss << "</pre><hr></body></html>";
