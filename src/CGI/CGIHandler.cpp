@@ -296,6 +296,8 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
         _status = WEXITSTATUS(_status);
       (_error_code = RESET_ERROR_CODE + _status) && _error_code == RESET_ERROR_CODE ? _error_code = 0 : _error_code;
       _isCgiDone = true;
+      if (_fd == -1)
+        _error_code = 500;
       int fd = open(COOKIFILE, O_RDONLY);
       if (access(COOKIFILE, F_OK) != -1)
       {
@@ -310,8 +312,6 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
         close(fd);
         unlink(COOKIFILE);
       }
-      if (_fd == -1)
-        _error_code = 500;
     }
     else
       return (CONTINUE);

@@ -8,4 +8,5 @@ if form.getvalue('textcontent'):
 else:
    text_content = "Not entered"
 body_string = "<html><head><title>Hello - Second CGI Program</title></head><body><h2> %s </h2></body></html>" % (text_content)
+
 print (body_string)
