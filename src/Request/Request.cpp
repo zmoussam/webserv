@@ -45,10 +45,10 @@ int Request::waitForBody(size_t headerlength)
 
 // Receive the request from the client
 int Request::recvRequest() {
-	char buffer[1025] = {0};
+	char buffer[10000] = {0};
     size_t headerlength = 0;
     // std::cout << "check" << std::endl;
-	int readRes = recv(_clientSocket, buffer, 1024, 0);
+	int readRes = recv(_clientSocket, buffer, 9999, 0);
     // if recv() failed
     // std::cout << "readRes: " << readRes << std::endl;
 	if (readRes == -1) {
@@ -389,7 +389,7 @@ void freeBoundaryBody(BoundaryBody *head)
 Request::~Request()
 {
     // std::cout << "Request destroyed" << std::endl;
-    // freeBoundaryBody(_boundaryBody);
+    freeBoundaryBody(_boundaryBody);
     _headers.clear();
     _queries.clear();
     _cookies.clear();
