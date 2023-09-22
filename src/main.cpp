@@ -19,7 +19,6 @@ int main(int ac, char **av) {
         std::cerr << "Error: no servers found" << std::endl;
         return ERROR;
     }
-
     // iteratore over servers
     for (std::map<int , std::vector<ServerConf> >::iterator it = config._serversByPort.begin(); it != config._serversByPort.end(); it++) {
         servers.push_back(Server(it->first, it->second));
