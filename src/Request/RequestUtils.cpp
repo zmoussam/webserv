@@ -93,7 +93,10 @@ size_t getBodyLength(std::string Content_length)
         bodylength += Content_length[i];
         i++;
     }
-    return std::atoi(bodylength.c_str());
+    std::istringstream converter(bodylength);
+    size_t bodyLength;
+    converter >> bodyLength;
+    return bodyLength;
 }
 
 int hexStringToInt(const std::string hexString) {

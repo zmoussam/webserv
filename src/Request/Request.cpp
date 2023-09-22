@@ -311,17 +311,14 @@ void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
         headBoundaryBody->headers["Content-Disposition"].length() - filenamePos - 11);
         headBoundaryBody->_isFile = true;
         size_t locationLen = _config.location.size();
-        std::string uplaodPath =  _config.getString(UPLOAD_PATH);
+        std::string uplaodPath = _config.getString(UPLOAD_PATH);
         for (size_t i = 0; i < locationLen; i++)
         {
-            std::cout << "location: " << _config.location[i].getLocationName() << std::endl;
             if (_URI.find(_config.location[i].getLocationName()) != std::string::npos)
             {
-
                 uplaodPath = _config.location[i].getString(UPLOAD_PATH);
             }
         }
-        std::cout << "uplaodPath: " << uplaodPath << std::endl;
         std::ofstream file((uplaodPath + headBoundaryBody->filename).c_str());
         std::cout << "URI: " << _URI << std::endl;
         if (!file) {
