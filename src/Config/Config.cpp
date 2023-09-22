@@ -14,7 +14,7 @@ ServerConf::ServerConf() {
     this->_listen = 0;
     this->_root = "";
     this->_index = "";
-    this->_uploadPath = "";
+    this->_uploadPath = "upload";
     this->_errorPages = std::map<int , std::string>();
     this->_methods = std::vector<std::string>();
 }
@@ -148,7 +148,12 @@ std::string ServerConf::getString(std::string type) const
     else if (type == "index")
         return this->_index;
     else if (type == "upload_path")
-        return (this->_root + this->_uploadPath);
+    {
+        if (this->_root[this->_root.length() - 1] != '/')
+            return (this->_root + "/" + this->_uploadPath);
+        else  
+            return (this->_root + this->_uploadPath);
+    }
     return "";
 }
 

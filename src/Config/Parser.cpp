@@ -175,6 +175,8 @@ Location Parser::parseLocationBody()
             location.setReturned(parseStringRules(REDIRECT));
         else if (look("compiler"))
             location.setCompiler(parseStringRules(COMPILER));
+        else if (look("upload_path"))
+            location.setString(UPLOAD_PATH, parseUploadPath(parseStringRules(UPLOAD_PATH)));
         else
             throw std::runtime_error(UNEXPECTED_TOKEN);
     }

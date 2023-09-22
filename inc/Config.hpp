@@ -14,10 +14,10 @@
 class ServerConf;
 class Config {
     public:
-        char *_file;
         Config();
-        Config(char *file);
         ~Config();
+        char *_file;
+        Config(char *file);
         std::vector<ServerConf>  _servers;
         std::map<int , std::vector<ServerConf> > _serversByPort;
 };
@@ -28,20 +28,21 @@ class ServerConf {
         size_t _bodySize;
         std::string _host;
         std::string _serverName;
-        std::string _uploadPath;
         size_t _listen;
     protected:
         bool _autoindex;
         std::string _root;
         std::string _index;
-        std::map<int , std::string> _errorPages;
+        std::string _uploadPath;
         std::vector<std::string> _methods;
+        std::map<int , std::string> _errorPages;
 
     public:
         ServerConf();
+        ~ServerConf();
         ServerConf(const ServerConf &copy);
         ServerConf &operator=(const ServerConf &copy);
-        ~ServerConf();
+        std::vector<Location> location;
         bool getAutoindex() const;
         size_t getNum(std::string type) const;
         std::vector<std::string> getMethods() const;
@@ -52,15 +53,14 @@ class ServerConf {
         void setString(std::string type, std::string value);
         void setErrorPage(std::map<int , std::string> error_pages);
         void setMethods(std::vector<std::string> methods);
-        std::vector<Location> location;
 
 };
 
 class Location: public ServerConf {
     private:
-        std::string _locationName;
         std::string _returned;
         std::string _compiler;
+        std::string _locationName;
     public:
         Location();
         ~Location();
