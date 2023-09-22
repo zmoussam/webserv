@@ -23,9 +23,9 @@ if form.getvalue('color') and form.getvalue('color') != color:
     color = form.getvalue('color')
 
 
-print("Content-Type:binary/octet-stream\r\n")
+print("Content-Type:text/html\r\n")
 print("Server:Python HTTP Server\r\n")
-# print("Set-Cookie:color=%s\r\n" % (color))
+print("Set-Cookie:color=%s\r\n" % (color))
 print("\r\n\r\n")
 bodystring = "<html><head><body style=\"background-color: %s;\"></head><body>" % (color)
 bodystring += "<h1>Welcome to my page</h1>"

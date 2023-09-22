@@ -2,12 +2,18 @@
 # include "Config.hpp"
 
 int main(int ac, char **av) {
-    if (ac != 2) {
+    if (ac > 2) {
         std::cerr << "Error: wrong number of arguments" << std::endl;
         return ERROR;
     }
+    std::string defFile;
+    if (ac == 2)
+        defFile = av[1];
+    else 
+        defFile = "configs/file_config.conf";
     std::vector<Server> servers;
-    Config config(av[1]);
+    char *file = (char *)defFile.c_str();
+    Config config(file);
     parsefile(config);
     if (config._servers.size() == 0) {
         std::cerr << "Error: no servers found" << std::endl;

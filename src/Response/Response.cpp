@@ -174,7 +174,6 @@ void Response::handleError(Request &req)
             }
         }
         _filePath = constructFilePath(_errorPages[_error], _root, _index);
-        std::cout << "Error file path: " << _filePath << std::endl;
         _fd = open(_filePath.c_str(), O_RDONLY);
     }
 }
@@ -242,7 +241,7 @@ void Response::InitFile(Request &req)
     else 
         _error = 0;
     
-    if (createUploadedfiles(req, _config) == DONE )
+    if (createUploadedfiles(req, _config) == DONE)
         return ;
     if (routing == 404)
     {
@@ -438,9 +437,10 @@ void    Response::findConfig(Request &req)
     if (headers.find("Host") != headers.end())
     {
         std::string host = headers.find("Host")->second;
+        int port = req.getPort();
         for (std::vector<ServerConf>::iterator it = _servers.begin(); it != _servers.end(); it++)
         {
-            if (it->getString(SERVER_NAME) == host)
+            if (it->getString(SERVER_NAME) == host || it->getString(SERVER_NAME) + ":" + std::to_string(port) == host)
             {
                 _config = *it;
                 return;

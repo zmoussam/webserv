@@ -59,11 +59,11 @@ void    CGI::findConfig(Request &req)
     const std::map<std::string, std::string> &headers = req.getHeaders();
     if (headers.find("Host") != headers.end())
     {
+        int port = req.getPort();
         std::string host = headers.find("Host")->second;
         for (std::vector<ServerConf>::iterator it = _servers.begin(); it != _servers.end(); it++)
         {
-            if (it->getString(SERVER_NAME) == host)
-            {
+            if (it->getString(SERVER_NAME) == host || it->getString(SERVER_NAME) + ":" + std::to_string(port) == host) {
                 _config = *it;
                 return;
             }

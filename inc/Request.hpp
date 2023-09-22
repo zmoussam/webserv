@@ -6,7 +6,7 @@
 /*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/20 16:10:21 by aarbaoui         ###   ########.fr       */
+/*   Updated: 2023/09/22 11:46:12 by aarbaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,9 +56,10 @@ class Request
         int _clientSocket;
         bool _isBodyRead;
         bool _checkBoundary;
+        int _port;
     public:
 		int recvRequest();
-		int handleRequest();
+		int handleRequest(int port);
 		bool isHeadersRead() const;
 		bool isBodyRead() const;
         int waitForBody(size_t headerLength);
@@ -71,6 +72,7 @@ class Request
         std::string getQueries() const;
         std::string getCookies() const {return _cookies;}
         BoundaryBody *getBoundaryBody() const {return _boundaryBody;}
+        int     getPort() const {return _port;}
         bool KeepAlive() const;
         std::map<std::string, std::string> getHeaders() const;
         // std::map<std::string, std::string> getCookies() const;

@@ -45,7 +45,7 @@ int Request::waitForBody(size_t headerlength)
 
 // Receive the request from the client
 int Request::recvRequest() {
-	char buffer[1024] = {0};
+	char buffer[1025] = {0};
     size_t headerlength = 0;
 	int readRes = recv(_clientSocket, buffer, 1024, 0);
     // if recv() failed
@@ -67,7 +67,8 @@ int Request::recvRequest() {
 	return (0);
 }
 // Handle the request received on the provided client socket
-int Request::handleRequest() {
+int Request::handleRequest(int port) {
+    _port = port;
 	// Receive the request from the client
 	int rcvRes = recvRequest();
 	if (rcvRes == DISCONNECTED) {
@@ -313,7 +314,7 @@ void    Request::findConfig()
         for (std::vector<ServerConf>::iterator it = _servers.begin(); it != _servers.end(); it++)
         {
             // check if the host is found in the servers vector
-            if (it->getString(SERVER_NAME) == host)
+            if (it->getString(SERVER_NAME) == host || it->getString(SERVER_NAME) + ":" + std::to_string(_port) == host)
             {
                 _config = *it;
                 return;
@@ -386,7 +387,7 @@ void Request::parsseBody(size_t &_bodyPos)
         // check if the body is a multipart/form-data request and if the boundary is found in the headers map
         if(_headers.find("Content-Type") != _headers.end() \
         && _headers["Content-Type"].find("multipart/form-data") != std::string::npos \
-        && _headers["Content-Type"].find("boundary") != std::string::npos)
+        && _headers["Content-Type"].find("boundary") != std::string::npos) \
         {
             // get the boundaries of the body and fill the boundary body linked list
             getBoundaries(_bodyPos);

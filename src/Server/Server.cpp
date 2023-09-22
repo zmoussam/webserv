@@ -116,7 +116,7 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set &masterSet) 
     for (size_t i = 0; i < _clients.size(); i++) {
         int clientSocket = _clients[i];
         if (FD_ISSET(clientSocket, &readSet)) {
-            int req = _requests[clientSocket].handleRequest();
+            int req = _requests[clientSocket].handleRequest(_port);
             if (req == DISCONNECTED) {
                 FD_CLR(clientSocket, &masterSet);
                 _clients.erase(_clients.begin() + i);
