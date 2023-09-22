@@ -12,7 +12,7 @@ int Request::waitForBody(size_t headerlength)
         size_t bodyLength = getBodyLength(_REQ.str().substr(bodyLengthPos + 16, \
         _REQ.str().find("\r\n", bodyLengthPos + 16) - bodyLengthPos - 16));
         std::string  body = _REQ.str().substr(headerlength + 4);
-        if (body.size() == bodyLength)
+        if (body.size() >= bodyLength)
         {
             _isBodyRead = true;
             _requestLength = _REQ.str().size();
@@ -66,15 +66,8 @@ int Request::recvRequest() {
     headerlength = _REQ.str().find("\r\n\r\n");
 	if (headerlength != std::string::npos && !_isBodyRead) {
         _isHeadersRead = true;
-        if (waitForBody(headerlength) == DONE)
-            return DONE;
-        else if (strlen(buffer) < 1024)
-        {
-            _isBodyRead = true;
-            _requestLength = _REQ.str().size();
-            _request = _REQ.str();
-            return DONE;
-        }
+        return waitForBody(headerlength);
+   
 	}
 	return (0);
 }
@@ -315,19 +308,18 @@ void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
     }
     else if (_bodySize <= _config.getNum(BODY_SIZE))
     {
-
         headBoundaryBody->filename = headBoundaryBody->headers["Content-Disposition"].substr(filenamePos + 10, \
         headBoundaryBody->headers["Content-Disposition"].length() - filenamePos - 11);
         headBoundaryBody->_isFile = true;
-        // std::ofstream file((_config.getString(UPLOAD_PATH) + headBoundaryBody->filename).c_str());
-        // if (!file) {
-        //     std::cout << "Failed to open the file!" << std::endl;
-        // }
-        // else 
-        // {
-        //     file << headBoundaryBody->_body;
-        //     file.close();
-        // }
+        std::ofstream file((_config.getString(UPLOAD_PATH) + headBoundaryBody->filename).c_str());
+        if (!file) {
+            std::cout << "Failed to open the file!" << std::endl;
+        }
+        else 
+        {
+            file << headBoundaryBody->_body;
+            file.close();
+        }
     }
     else 
         _error = 413;
@@ -397,7 +389,7 @@ void freeBoundaryBody(BoundaryBody *head)
 Request::~Request()
 {
     // std::cout << "Request destroyed" << std::endl;
-    freeBoundaryBody(_boundaryBody);
+    // freeBoundaryBody(_boundaryBody);
     _headers.clear();
     _queries.clear();
     _cookies.clear();

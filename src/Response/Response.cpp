@@ -241,8 +241,8 @@ void Response::InitFile(Request &req)
     else 
         _error = 0;
     
-    if (createUploadedfiles(req, _config) == DONE)
-        return ;
+    // if (createUploadedfiles(req, _config) == DONE)
+    //     return ;
     if (routing == 404)
     {
         handleError(req);

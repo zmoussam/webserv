@@ -5,7 +5,7 @@ YELLOW = \033[0;33m
 NC = \033[0m # No Color
 
 CC = c++
-CFLAGS = -Wall -Wextra -Werror -std=c++98 -fsanitize=address -g
+CFLAGS = -Wall -Wextra -Werror -std=c++98 
 LDFLAGS =
 
 SRC_DIR = src
