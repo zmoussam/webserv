@@ -299,7 +299,6 @@ void    Request::findConfig()
 
 void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
 {
-    this->findConfig();
     size_t filenamePos = headBoundaryBody->headers["Content-Disposition"].find("filename");
     if (filenamePos == std::string::npos)
     {
@@ -311,7 +310,20 @@ void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
         headBoundaryBody->filename = headBoundaryBody->headers["Content-Disposition"].substr(filenamePos + 10, \
         headBoundaryBody->headers["Content-Disposition"].length() - filenamePos - 11);
         headBoundaryBody->_isFile = true;
-        std::ofstream file((_config.getString(UPLOAD_PATH) + headBoundaryBody->filename).c_str());
+        size_t locationLen = _config.location.size();
+        std::string uplaodPath =  _config.getString(UPLOAD_PATH);
+        for (size_t i = 0; i < locationLen; i++)
+        {
+            std::cout << "location: " << _config.location[i].getLocationName() << std::endl;
+            if (_URI.find(_config.location[i].getLocationName()) != std::string::npos)
+            {
+
+                uplaodPath = _config.location[i].getString(UPLOAD_PATH);
+            }
+        }
+        std::cout << "uplaodPath: " << uplaodPath << std::endl;
+        std::ofstream file((uplaodPath + headBoundaryBody->filename).c_str());
+        std::cout << "URI: " << _URI << std::endl;
         if (!file) {
             std::cout << "Failed to open the file!" << std::endl;
         }
@@ -351,6 +363,7 @@ void Request::getBoundaries(size_t &_bodyPos)
 void Request::parsseBody(size_t &_bodyPos)
 {
     // check if the body is found in the headers map and if the body is not empty and not chunked
+    this->findConfig();
     if (_headers.find("Content-Length") != _headers.end())
     {  
         std::istringstream iss(_headers["Content-Length"]);
@@ -366,13 +379,17 @@ void Request::parsseBody(size_t &_bodyPos)
         }
         // check if the body is a urlencoded request
         else
-        _body = _request.substr(_bodyPos + 4 , _bodySize);
+            _body = _request.substr(_bodyPos + 4 , _bodySize);
+        if (_body.size() > _config.getNum(BODY_SIZE))
+            _error = 413;
     }
     else if (_headers.find("Transfer-Encoding") != _headers.end() \
     && _headers["Transfer-Encoding"].find("chunked") != std::string::npos) // chunked request body
     {
         getChunkedBody(_bodyPos);
         _bodySize = _body.size();
+        if (_bodySize > _config.getNum(BODY_SIZE))
+            _error = 413;
     }
     // std::cout <<_body << std::endl;
 }
