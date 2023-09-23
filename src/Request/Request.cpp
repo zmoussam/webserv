@@ -145,6 +145,7 @@ void Request::parsseRequest()
     parsseHTTPversion(nextPos); // parse the HTTP version of the request
     parsseHeaders(nextPos); // parse the headers of the request and fill the headers map
     parsseBody(nextPos); // parse the body of the request and fill the body string
+    HandelDeleteMethod(); // handle the delete method
     // std::cout << _request << std::endl;
 
 }
@@ -298,19 +299,6 @@ void    Request::findConfig()
     _config = _servers[0];
 }
 
-std::string Request::getUploadPath()
-{
-    size_t locationLen = _config.location.size();
-    std::string uplaodPath = _config.getString(UPLOAD_PATH);
-    for (size_t i = 0; i < locationLen; i++)
-    {
-        if (_URI.find(_config.location[i].getLocationName()) != std::string::npos)
-        {
-            uplaodPath = _config.location[i].getString(UPLOAD_PATH);
-        }
-    }
-    return uplaodPath;
-}
 
 // create a file with the provided name and body
 void Request::creatFile(std::string fileName, std::string body)
@@ -364,8 +352,13 @@ void Request::getBoundaries(size_t &_bodyPos)
             headBoundaryBody->next = new BoundaryBody;
         else 
             headBoundaryBody->next = NULL;
-        if (_method == "POST") 
-            creatUploadFile(headBoundaryBody); // create the file if the body is a file
+        if (_method == "POST")
+        {
+            if (isMethodAllowed())
+                creatUploadFile(headBoundaryBody); // create the file if the body is a file
+            else 
+                _error = 405;
+        }
         bodyCount--;
         headBoundaryBody = headBoundaryBody->next;
         _bodyPos += tmpbody.length() + _boundary.length() + 2;
@@ -418,9 +411,14 @@ void Request::parsseBody(size_t &_bodyPos)
             _body = _request.substr(_bodyPos + 4 , _bodySize);
             if (_method == "POST" && _body.size() <= _config.getNum(BODY_SIZE)) 
             {
-                std::string fileName = generateRandomString();
-                std::string uplaodPath = getUploadPath();
-                creatFile(uplaodPath + fileName, _body);
+                if (isMethodAllowed())
+                {
+                    std::string fileName = generateRandomString();
+                    std::string uplaodPath = getUploadPath();
+                    creatFile(uplaodPath + fileName, _body);
+                }
+                else 
+                    _error = 405;
             }
         } 
         if (_body.size() > _config.getNum(BODY_SIZE))
@@ -436,6 +434,77 @@ void Request::parsseBody(size_t &_bodyPos)
     }
     // std::cout <<_body << std::endl;
 }
+std::string Request::getUploadPath()
+{
+    size_t locationLen = _config.location.size();
+    std::string uplaodPath = _config.getString(UPLOAD_PATH);
+    for (size_t i = 0; i < locationLen; i++)
+    {
+        if (_URI.find(_config.location[i].getLocationName()) != std::string::npos)
+        {
+            uplaodPath = _config.location[i].getString(UPLOAD_PATH);
+        }
+    }
+    return uplaodPath;
+}
+bool Request::isMethodAllowed()
+{
+    std::vector<std::string> allowedMethods = _config.getMethods();
+    size_t locationLen = _config.location.size();
+    for (size_t i = 0; i < locationLen; i++)
+    {
+        if (_URI.find(_config.location[i].getLocationName()) != std::string::npos)
+        {
+            allowedMethods = _config.location[i].getMethods();
+        }
+    }
+    if (std::find(allowedMethods.begin(), allowedMethods.end(), _method) != allowedMethods.end())
+        return true;
+    return false;
+}
+
+std::string Request::getfileNametodelete()
+{
+    std::string fileName = _config.getString(ROOT) + _URI;
+    if (_URI == "/")
+    {
+        fileName += _config.getString(INDEX);
+        return fileName;
+    }
+    size_t locationLen = _config.location.size();
+    for (size_t i = 0; i < locationLen; i++)
+    {
+        if (_URI.find(_config.location[i].getLocationName()) != std::string::npos)
+        {
+            fileName = _URI.replace(_URI.find(_config.location[i].getLocationName()), \
+            _config.location[i].getLocationName().length(), _config.location[i].getString(ROOT));
+            if (fileName == _config.location[i].getString(ROOT))
+            {
+                std::string index = _config.location[i].getString(INDEX);
+                if (index != "")
+                    fileName += "/" + index;
+                else
+                    fileName += "/" + _config.getString(INDEX);
+            }
+        }
+    }
+    return fileName;
+}
+void Request::HandelDeleteMethod()
+{
+    if (_method == "DELETE")
+    {
+        if (isMethodAllowed())
+        {
+           std::string fileName =  getfileNametodelete();
+           if (remove(fileName.c_str()) != 0)
+                _error = 404;
+        }
+        else 
+            _error = 405; 
+    }
+}
+
 void freeBoundaryBody(BoundaryBody *head)
 {
     BoundaryBody *tmp;

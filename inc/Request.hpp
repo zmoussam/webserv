@@ -6,7 +6,7 @@
 /*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/23 17:15:25 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/09/23 18:53:58 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,6 +93,9 @@ class Request
         std::string generateRandomString();
         std::string getUploadPath();
         void creatFile(std::string fileName, std::string body);
+        std::string getfileNametodelete();
+        void HandelDeleteMethod();
+        bool isMethodAllowed();
         void parsseCookies();
         Request();
         Request(int clientSocket, std::vector<ServerConf> servers);
