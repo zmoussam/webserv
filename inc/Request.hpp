@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aarbaoui <aarbaoui@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/22 11:46:12 by aarbaoui         ###   ########.fr       */
+/*   Updated: 2023/09/23 16:59:28 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,6 +89,9 @@ class Request
         size_t countboundaries(size_t _bodyPos);
         void findConfig();
         void creatUploadFile(BoundaryBody *headBoundaryBody);
+        std::string generateRandomString();
+        std::string getUploadPath();
+        void creatFile(std::string fileName, std::string body);
         void parsseCookies();
         Request();
         Request(int clientSocket, std::vector<ServerConf> servers);

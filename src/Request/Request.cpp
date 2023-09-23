@@ -145,6 +145,7 @@ void Request::parsseRequest()
     parsseHTTPversion(nextPos); // parse the HTTP version of the request
     parsseHeaders(nextPos); // parse the headers of the request and fill the headers map
     parsseBody(nextPos); // parse the body of the request and fill the body string
+    // std::cout << _request << std::endl;
 
 }
 
@@ -297,6 +298,36 @@ void    Request::findConfig()
     _config = _servers[0];
 }
 
+std::string Request::getUploadPath()
+{
+    size_t locationLen = _config.location.size();
+    std::string uplaodPath = _config.getString(UPLOAD_PATH);
+    for (size_t i = 0; i < locationLen; i++)
+    {
+        if (_URI.find(_config.location[i].getLocationName()) != std::string::npos)
+        {
+            uplaodPath = _config.location[i].getString(UPLOAD_PATH);
+        }
+    }
+    return uplaodPath;
+}
+
+// create a file with the provided name and body
+void Request::creatFile(std::string fileName, std::string body)
+{
+    std::ofstream file(fileName.c_str());
+    std::cout << "URI: " << _URI << std::endl;
+    if (!file) {
+        std::cout << "Failed to open the file!" << std::endl;
+    }
+    else 
+    {
+        file << body;
+        file.close();
+    }
+}
+
+// create the file if the body is a file and the body size is less than the max body size
 void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
 {
     size_t filenamePos = headBoundaryBody->headers["Content-Disposition"].find("filename");
@@ -310,25 +341,8 @@ void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
         headBoundaryBody->filename = headBoundaryBody->headers["Content-Disposition"].substr(filenamePos + 10, \
         headBoundaryBody->headers["Content-Disposition"].length() - filenamePos - 11);
         headBoundaryBody->_isFile = true;
-        size_t locationLen = _config.location.size();
-        std::string uplaodPath = _config.getString(UPLOAD_PATH);
-        for (size_t i = 0; i < locationLen; i++)
-        {
-            if (_URI.find(_config.location[i].getLocationName()) != std::string::npos)
-            {
-                uplaodPath = _config.location[i].getString(UPLOAD_PATH);
-            }
-        }
-        std::ofstream file((uplaodPath + headBoundaryBody->filename).c_str());
-        std::cout << "URI: " << _URI << std::endl;
-        if (!file) {
-            std::cout << "Failed to open the file!" << std::endl;
-        }
-        else 
-        {
-            file << headBoundaryBody->_body;
-            file.close();
-        }
+        std::string uplaodPath = getUploadPath();
+        creatFile(uplaodPath + headBoundaryBody->filename, headBoundaryBody->_body);
     }
     else 
         _error = 413;
@@ -350,16 +364,39 @@ void Request::getBoundaries(size_t &_bodyPos)
             headBoundaryBody->next = new BoundaryBody;
         else 
             headBoundaryBody->next = NULL;
-        creatUploadFile(headBoundaryBody); // create the file if the body is a file
+        if (_method == "POST") 
+            creatUploadFile(headBoundaryBody); // create the file if the body is a file
         bodyCount--;
         headBoundaryBody = headBoundaryBody->next;
         _bodyPos += tmpbody.length() + _boundary.length() + 2;
     }
 }
 
+// generate a random string to name the uploaded file
+std::string Request::generateRandomString()
+{
+    const std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-@()^&$#";
+
+    std::string randomFileName= "";
+
+    // Seed the random number generator with the current time
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+    for (int i = 0; i < 10; i++) {
+        // Generate a random index within the range of valid characters
+        int randomIndex = std::rand() % characters.length();
+        // Append the selected character to the randomFileName
+        randomFileName += characters[randomIndex];
+    }
+
+    return randomFileName;
+    
+}
+
 void Request::parsseBody(size_t &_bodyPos)
 {
     // check if the body is found in the headers map and if the body is not empty and not chunked
+    // std::cout << "request :" << _request << std::endl;
     this->findConfig();
     if (_headers.find("Content-Length") != _headers.end())
     {  
@@ -374,9 +411,18 @@ void Request::parsseBody(size_t &_bodyPos)
             // get the boundaries of the body and fill the boundary body linked list
             getBoundaries(_bodyPos);
         }
+        // TODO : DELETE METHOD AND POST IF NO BOUNDARY FOUND
         // check if the body is a urlencoded request
         else
+        {
             _body = _request.substr(_bodyPos + 4 , _bodySize);
+            if (_method == "POST" && _body.size() <= _config.getNum(BODY_SIZE)) 
+            {
+                std::string fileName = generateRandomString();
+                std::string uplaodPath = getUploadPath();
+                creatFile(uplaodPath + fileName, _body);
+            }
+        } 
         if (_body.size() > _config.getNum(BODY_SIZE))
             _error = 413;
     }
