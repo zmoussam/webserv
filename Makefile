@@ -5,7 +5,7 @@ YELLOW = \033[0;33m
 NC = \033[0m # No Color
 
 CC = c++
-CFLAGS = -Wall -Wextra -Werror -std=c++98 
+CFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 LDFLAGS =
 
 SRC_DIR = src
@@ -22,21 +22,22 @@ all: $(TARGET)
 
 # Check if the target file exists before linking
 $(TARGET): $(OBJS)
+
 	@mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(BIN_DIR)/$@ $^
-	printf "$(GREEN)[SUCCESS]$(NC) Compiled $@\n"
+	@$(CC) $(CFLAGS) $(LDFLAGS) -o $(BIN_DIR)/$@ $^
+	@printf "$(GREEN)[SUCCESS]$(NC) Compiled $@\n"
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(OBJ_DIR)/$(*D)
-	$(CC) $(CFLAGS) -I$(INC_DIR) -c -o $@ $<
+	@$(CC) $(CFLAGS) -I$(INC_DIR) -c -o $@ $<
 	@printf "$(GREEN)[OK]$(NC) Compiled $<\n"
 
 clean:
-	rm -rf $(OBJ_DIR)
+	@rm -rf $(OBJ_DIR)
 	@printf "$(RED)[CLEAN]$(NC) Removed object files\n"
 
 fclean: clean
-	rm -rf $(BIN_DIR)
+	@rm -rf $(BIN_DIR)
 	@printf "$(RED)[FCLEAN]$(NC) Removed binaries\n"
 
 re: fclean all
