@@ -88,6 +88,7 @@ def main():
         print("<form method='post' action='logout.py'>")
         print("<input type='submit' value='Logout'>")
         print("</form>")
+        print("""<iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ?si=MfJvn7xuVwIWHr_M" title="YouTube video player" frameborder="1" allow="accelerometer; autoplay="1"; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>""")
     else:
         print("<form method='post'>")
         print("<label for='username'>Username:</label>")

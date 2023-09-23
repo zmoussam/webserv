@@ -6,7 +6,7 @@
 /*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/23 16:59:28 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/09/23 17:15:25 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,7 @@ class Request
         std::string getMethod() const;
         std::string getQueries() const;
         std::string getCookies() const {return _cookies;}
+        bool isKeepAlive() const {return _keepAlive;}
         BoundaryBody *getBoundaryBody() const {return _boundaryBody;}
         int     getPort() const {return _port;}
         bool KeepAlive() const;

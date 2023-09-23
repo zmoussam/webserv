@@ -45,4 +45,6 @@ class Server {
 		int stop(void);
 		int handleClients(fd_set& readSet, fd_set& writeSet, fd_set& masterSet);
 		int addToSets(fd_set& masterSet);
+		void closeClientConnection(int clientSocket, size_t index, fd_set& masterSet);
+		void acceptClientConnection(int clientSocket, fd_set& masterSet);
 };

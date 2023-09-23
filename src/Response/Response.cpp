@@ -104,7 +104,6 @@ int Response::findRouting(Request &req)
             _errorPages = it->getErrorPages();
             _methods = it->getMethods();
             _redirect = it->getReturned();
-            // remove location name from path
             int idx = req.getPath().find(it->getLocationName());
             std::string locationName = it->getLocationName();
             std::string relativePath = req.getPath().find_first_of(locationName) == 0 ? req.getPath().substr(locationName.length()) : req.getPath().substr(0, idx);
@@ -178,14 +177,24 @@ void Response::handleError(Request &req)
     }
 }
 
-std::string findDirname(std::string &path, std::string &root)
+std::string findDirname(const std::string& path, const std::string& root)
 {
-    // remove root from path and return the dirname
-    std::string dirname = path.substr(root.length());
+    // Find the position where root ends in the path
+    size_t rootPos = path.find(root);
+    if (rootPos == std::string::npos)
+        return "";
+
+    // Remove root from the path
+    std::string dirname = path.substr(rootPos + root.length());
+
+    // Find the last '/' character in the remaining path
     size_t pos = dirname.find_last_of('/');
     if (pos == std::string::npos)
         return "";
+
+    // Extract the dirname
     dirname = dirname.substr(0, pos);
+
     return dirname;
 }
 
@@ -194,106 +203,81 @@ void Response::genListing()
 {
     std::string path = _filePath;
     DIR *dir = opendir(path.c_str());
-    struct dirent *ent;
+
     if (dir == NULL)
     {
         _error = 69;
         return;
     }
+
     std::stringstream ss;
     std::string location = _location.getLocationName();
-    std::string pathName;
-    if (!location.empty())
-        pathName = location + findDirname(path, _root) + "/";
-    else
-        pathName = findDirname(path, _root) + "/";
-    if (pathName.empty())
-        ss << "<html><head><title>Index of " << "/" << "</title></head><body bgcolor=\"white\"><h1>Index of " << "/" << "</h1><hr><pre>";
-    else
-        ss << "<html><head><title>Index of " << pathName << "</title></head><body bgcolor=\"white\"><h1>Index of " << pathName << "</h1><hr><pre>";
+    std::string pathName = location.empty() ? findDirname(path, _root) + "/" : location + findDirname(path, _root) + "/";
 
-    if (dir)
+    ss << "<html><head><title>Index of " << pathName << "</title></head><body bgcolor=\"white\"><h1>Index of " << pathName << "</h1><hr><pre>";
+
+    struct dirent *ent;
+    while ((ent = readdir(dir)) != NULL)
     {
-        while ((ent = readdir(dir)) != NULL)
-            ss << "<a href=\"" << pathName << ent->d_name << "\">" << ent->d_name << "</a><br>";
-        closedir(dir);
+        ss << "<a href=\"" << pathName << ent->d_name << "\">" << ent->d_name << "</a><br>";
     }
+
+    closedir(dir);
+
     ss << "</pre><hr></body></html>";
     _body = ss.str();
     _fileSize = _body.size();
     _isTextStream = true;
 }
 
-void Response::InitFile(Request &req)
-{
+
+void Response::InitFile(Request &req) {
     int routing = findRouting(req);
     _error = req.getError();
-    if (_error != 0)
-    {
+    if (_error != 0) {
         handleError(req);
-        if (_fd == -1)
-        {
+        if (_fd == -1) {
             handleDefaultError(req);
-            return ;
-        }
-        return ;
-    }
-    else 
-        _error = 0;
-    
-    // if (createUploadedfiles(req, _config) == DONE)
-    //     return ;
-    if (routing == 404)
-    {
-        handleError(req);
-        if (_fd == -1)
-        {
-            handleDefaultError(req);
-            return;
         }
         return;
     }
-    else if (routing == 301)
-    {
+
+    if (routing == 404 || (isDirectory(_filePath.c_str()) && _autoindex == false)) {
+        _error = 404;
+        handleError(req);
+        if (_fd == -1) {
+            handleDefaultError(req);
+        }
+        return;
+    }
+
+    if (routing == 301) {
         handleError(req);
         return;
     }
-    if (_autoindex == true)
-    {
-        if (_isTextStream == true)
-            genListing();
-        if (_error != 69)
-        {
+
+    if (_autoindex && _isTextStream) {
+        genListing();
+        if (_error != 69) {
             return;
         }
         _isTextStream = false;
         _error = 0;
     }
-    if (isDirectory(_filePath.c_str()))
-    {
-        _error = 404;
-        handleError(req);
-        if (_fd == -1)
-        {
-            handleDefaultError(req);
-            return;
-        }
-        return;
-    }
+
     _fd = open(_filePath.c_str(), O_RDONLY);
-    if (_fd == -1)
-    {
+    if (_fd == -1) {
         _error = 404;
         handleError(req);
-        if (_fd == -1)
-        {
+        if (_fd == -1) {
             handleDefaultError(req);
-            return;
         }
     }
+
     _fileSize = lseek(_fd, 0, SEEK_END);
     lseek(_fd, 0, SEEK_SET);
 }
+
 
 void Response::checkMethod(Request &req)
 {
@@ -328,28 +312,35 @@ void Response::InitHeaders(Request &req)
     std::stringstream ss;
     checkHttpVersion(req);
     checkMethod(req);
-    // checkCGI(req);
     findStatusCode(req);
     _headers["Server"] = "Webserv/1.0";
+
+    // Check if Content-Type is not set
     if (_headers.find("Content-Type") == _headers.end())
     {
         _headers["Content-Type"] = getContentType(_filePath);
     }
+
+    // Check _isTextStream and _redirect
     if (_isTextStream == true && _redirect.empty())
     {
         ss << _body.length();
         _headers["Content-Length"] = ss.str();
-        _headers["Connection"] = "keep-alive";
+        _headers["Connection"] = req.isKeepAlive() ? "keep-alive" : "close";
         return;
     }
+
+    // Check _redirect
     if (!_redirect.empty())
     {
         _headers["Location"] = _redirect;
         _error = 301;
     }
+
+    // Set Content-Length and Connection
     ss << _fileSize;
     _headers["Content-Length"] = ss.str();
-    _headers["Connection"] = "keep-alive";
+    _headers["Connection"] = req.isKeepAlive() ? "keep-alive" : "close";
 }
 
 #ifdef __APPLE__
