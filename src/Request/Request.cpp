@@ -465,8 +465,9 @@ bool Request::isMethodAllowed()
 
 std::string Request::getfileNametodelete()
 {
-    std::string fileName = _config.getString(ROOT) + _URI;
-    if (_URI == "/")
+    std::string tmpURI = _URI;
+    std::string fileName = _config.getString(ROOT) + tmpURI;
+    if (tmpURI == "/")
     {
         fileName += _config.getString(INDEX);
         return fileName;
@@ -474,9 +475,9 @@ std::string Request::getfileNametodelete()
     size_t locationLen = _config.location.size();
     for (size_t i = 0; i < locationLen; i++)
     {
-        if (_URI.find(_config.location[i].getLocationName()) != std::string::npos)
+        if (tmpURI.find(_config.location[i].getLocationName()) != std::string::npos)
         {
-            fileName = _URI.replace(_URI.find(_config.location[i].getLocationName()), \
+            fileName = tmpURI.replace(tmpURI.find(_config.location[i].getLocationName()), \
             _config.location[i].getLocationName().length(), _config.location[i].getString(ROOT));
             if (fileName == _config.location[i].getString(ROOT))
             {
