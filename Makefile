@@ -18,14 +18,13 @@ TARGET = webserv
 SRCS := $(shell find $(SRC_DIR) -name "*.cpp")
 OBJS := $(addprefix $(OBJ_DIR)/,$(patsubst $(SRC_DIR)/%,%,$(SRCS:.cpp=.o)))
 
-all: $(TARGET)
+all: $(BIN_DIR)/$(TARGET)
 
-# Check if the target file exists before linking
-$(TARGET): $(OBJS)
-
+# Check if the binary is up-to-date, and if not, link it.
+$(BIN_DIR)/$(TARGET): $(OBJS)
 	@mkdir -p $(BIN_DIR)
-	@$(CC) $(CFLAGS) $(LDFLAGS) -o $(BIN_DIR)/$@ $^
-	@printf "$(GREEN)[SUCCESS]$(NC) Compiled $@\n"
+	@$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^;
+	@printf "$(GREEN)[SUCCESS]$(NC) Compiled $@\n";
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(OBJ_DIR)/$(*D)
