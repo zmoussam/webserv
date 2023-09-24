@@ -6,7 +6,7 @@
 /*   By: zmoussam <zmoussam@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/13 18:46:40 by zmoussam          #+#    #+#             */
-/*   Updated: 2023/09/23 18:53:58 by zmoussam         ###   ########.fr       */
+/*   Updated: 2023/09/24 17:38:29 by zmoussam         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,6 +70,7 @@ class Request
         std::string getPath() const;
         std::string getMethod() const;
         std::string getQueries() const;
+        size_t getBodyLength(std::string Content_length);
         std::string getCookies() const {return _cookies;}
         bool isKeepAlive() const {return _keepAlive;}
         BoundaryBody *getBoundaryBody() const {return _boundaryBody;}
@@ -105,7 +106,6 @@ class Request
 
 };
 
-size_t getBodyLength(std::string Content_length);
 int hexStringToInt(const std::string hexString);
 
 #endif

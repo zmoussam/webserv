@@ -12,7 +12,7 @@ int Request::waitForBody(size_t headerlength)
         size_t bodyLength = getBodyLength(_REQ.str().substr(bodyLengthPos + 16, \
         _REQ.str().find("\r\n", bodyLengthPos + 16) - bodyLengthPos - 16));
         std::string  body = _REQ.str().substr(headerlength + 4);
-        if (body.size() >= bodyLength)
+        if (bodyLength == 0 || _error == 400 || body.size() >= bodyLength)
         {
             _isBodyRead = true;
             _requestLength = _REQ.str().size();
@@ -312,6 +312,7 @@ void Request::creatFile(std::string fileName, std::string body)
     {
         file << body;
         file.close();
+        _error = 201;
     }
 }
 
@@ -324,7 +325,7 @@ void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
         headBoundaryBody->filename = "";
         headBoundaryBody->_isFile = false;
     }
-    else if (_bodySize <= _config.getNum(BODY_SIZE))
+    else 
     {
         headBoundaryBody->filename = headBoundaryBody->headers["Content-Disposition"].substr(filenamePos + 10, \
         headBoundaryBody->headers["Content-Disposition"].length() - filenamePos - 11);
@@ -332,8 +333,6 @@ void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
         std::string uplaodPath = getUploadPath();
         creatFile(uplaodPath + headBoundaryBody->filename, headBoundaryBody->_body);
     }
-    else 
-        _error = 413;
 }
 
 void Request::getBoundaries(size_t &_bodyPos)
@@ -388,30 +387,51 @@ std::string Request::generateRandomString()
 
 void Request::parsseBody(size_t &_bodyPos)
 {
-    // check if the body is found in the headers map and if the body is not empty and not chunked
-    // std::cout << "request :" << _request << std::endl;
-    this->findConfig();
-    if (_headers.find("Content-Length") != _headers.end())
+    findConfig();
+    if (_headers.find("Content-Length") != _headers.end() && _headers.find("Transfer-Encoding") == _headers.end() \
+    && _headers["Transfer-Encoding"].find("chunked") == std::string::npos)
     {  
         std::istringstream iss(_headers["Content-Length"]);
-        if (!(iss >> _bodySize)) // convert the body size from string to long long
-            _bodySize = 0;
-        // check if the body is a multipart/form-data request and if the boundary is found in the headers map
-        if(_headers.find("Content-Type") != _headers.end() \
-        && _headers["Content-Type"].find("multipart/form-data") != std::string::npos \
-        && _headers["Content-Type"].find("boundary") != std::string::npos) \
+        if (iss >> _bodySize)
         {
-            // get the boundaries of the body and fill the boundary body linked list
-            getBoundaries(_bodyPos);
-        }
-        // TODO : DELETE METHOD AND POST IF NO BOUNDARY FOUND
-        // check if the body is a urlencoded request
-        else
-        {
-            _body = _request.substr(_bodyPos + 4 , _bodySize);
-            if (_method == "POST" && _body.size() <= _config.getNum(BODY_SIZE)) 
+            if (_bodySize <= _config.getNum(BODY_SIZE))
             {
-                if (isMethodAllowed())
+                if(_headers.find("Content-Type") != _headers.end() \
+                && _headers["Content-Type"].find("multipart/form-data") != std::string::npos \
+                && _headers["Content-Type"].find("boundary") != std::string::npos) \
+                    getBoundaries(_bodyPos);
+                else
+                {
+                    _body = _request.substr(_bodyPos + 4 , _bodySize);
+                    if (_method == "POST") 
+                    {
+                        if (isMethodAllowed())
+                        {
+                            std::string fileName = generateRandomString();
+                            std::string uplaodPath = getUploadPath();
+                            creatFile(uplaodPath + fileName, _body);
+                        }
+                        else 
+                            _error = 405;
+                    }
+                }
+            }
+            else 
+                _error = 413;
+        }
+        else 
+            _error = 400;
+    }
+    else if (_headers.find("Transfer-Encoding") != _headers.end() \
+    && _headers["Transfer-Encoding"].find("chunked") != std::string::npos) 
+    {
+        getChunkedBody(_bodyPos);
+        _bodySize = _body.size();
+        if (_bodySize <= _config.getNum(BODY_SIZE))
+        {
+            if (_method == "POST")
+            {
+                if (isMethodAllowed() && _bodySize <= _config.getNum(BODY_SIZE))
                 {
                     std::string fileName = generateRandomString();
                     std::string uplaodPath = getUploadPath();
@@ -420,19 +440,11 @@ void Request::parsseBody(size_t &_bodyPos)
                 else 
                     _error = 405;
             }
-        } 
-        if (_body.size() > _config.getNum(BODY_SIZE))
+        }
+        else 
             _error = 413;
     }
-    else if (_headers.find("Transfer-Encoding") != _headers.end() \
-    && _headers["Transfer-Encoding"].find("chunked") != std::string::npos) // chunked request body
-    {
-        getChunkedBody(_bodyPos);
-        _bodySize = _body.size();
-        if (_bodySize > _config.getNum(BODY_SIZE))
-            _error = 413;
-    }
-    // std::cout <<_body << std::endl;
+    std::cout << "_error: " << _error << std::endl;
 }
 std::string Request::getUploadPath()
 {

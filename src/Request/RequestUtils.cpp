@@ -84,7 +84,7 @@ bool Request::isBodyRead() const {
 	return _isBodyRead;
 }
 
-size_t getBodyLength(std::string Content_length)
+size_t Request::getBodyLength(std::string Content_length)
 {
     std::string bodylength = "";
     int i = 0;
@@ -94,9 +94,13 @@ size_t getBodyLength(std::string Content_length)
         i++;
     }
     std::istringstream converter(bodylength);
-    size_t bodyLength;
-    converter >> bodyLength;
-    return bodyLength;
+    long long bodyLength;
+    if (converter >> bodyLength)
+        return bodyLength;
+    else {
+        _error = 400;
+        return 0;
+    };
 }
 
 int hexStringToInt(const std::string hexString) {
