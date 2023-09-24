@@ -7,6 +7,7 @@
 #define E404 204
 #define E405 205
 #define RESET_ERROR_CODE 200
+#define HTTP_ENV "HTTP_"
 #define COOKIFILE "/tmp/cookie.txt" 
 
 class Response;

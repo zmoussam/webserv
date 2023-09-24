@@ -1,4 +1,4 @@
-# include "../../inc/CGIHandler.hpp"
+# include "CGIHandler.hpp"
 CGI::CGI()
 {
   _root = "www/";
@@ -275,12 +275,18 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
         exit (_error_code);
       if (req.getCookies().size() > 0)
         setenv("HTTP_COOKIE", req.getCookies().c_str(), 1);
-      setenv("HTTP_HOST", req.getHeaders()["Host"].c_str(), 1);
-      setenv("HTTP_CONNECTION", req.getHeaders()["Connection"].c_str(), 1);
+      std::map<std::string, std::string> headers = req.getHeaders();
+      for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++)
+      {
+        if (it->first == "Content-Length")
+          continue;
+        std::string key = HTTP_ENV + it->first;
+        std::transform(key.begin(), key.end(), key.begin(), ::toupper);
+        setenv(key.c_str(), it->second.c_str(), 1);
+      }
       setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
       setenv("REQUEST_URI", req.getPath().c_str(), 1);
       setenv("QUERY_STRING", req.getQueries().c_str(), 1);
-      setenv("CONTENT_TYPE", req.getHeaders()["Content-Type"].c_str(), 1);
       setenv("SCRIPT_NAME", req.getPath().c_str(), 1);
       setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
       setenv("PATH_INFO", req.getPath().c_str(), 1);
