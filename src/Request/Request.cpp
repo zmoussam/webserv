@@ -45,10 +45,10 @@ int Request::waitForBody(size_t headerlength)
 
 // Receive the request from the client
 int Request::recvRequest() {
-	char buffer[10000] = {0};
+	char buffer[1025] = {0};
     size_t headerlength = 0;
     // std::cout << "check" << std::endl;
-	int readRes = recv(_clientSocket, buffer, 9999, 0);
+	int readRes = recv(_clientSocket, buffer, sizeof(buffer) - 1, 0);
     // if recv() failed
     // std::cout << "readRes: " << readRes << std::endl;
 	if (readRes == -1) {
@@ -304,9 +304,8 @@ void    Request::findConfig()
 void Request::creatFile(std::string fileName, std::string body)
 {
     std::ofstream file(fileName.c_str());
-    std::cout << "URI: " << _URI << std::endl;
     if (!file) {
-        std::cout << "Failed to open the file!" << std::endl;
+        _error = 500;
     }
     else 
     {

@@ -13,9 +13,25 @@
 # include "Request.hpp"
 #include "Macros.hpp"
 #include "CGIHandler.hpp"
-
+# include <exception>
 # define ERROR_404 "<h1>404 Not Found</h1>"
 
+# define ISFILE 69
+
+class HTTPException : public std::exception {
+	public:
+		HTTPException(const std::string& message, int code) : message_(message),_code(code)  {}
+
+		virtual const char* what() const throw() {
+			return message_.c_str();
+		}
+		virtual ~HTTPException() throw() {}
+
+		int getErrorCode() const { return _code; }
+	private:
+		std::string message_;
+		int _code;
+};
 class CGI;
 class Response
 {
@@ -28,28 +44,29 @@ class Response
 		void    	InitFile(Request &req);
 		void    	InitHeaders(Request &req);
 		std::string checkFilePath(Request &req);
-		void		handleDefaultError(Request &req);
-		int		sendError(std::string &root, std::map<int, std::string> &errpages);
-		int		sendResp(Request &req, CGI *cgi);
-		int    createUploadedfiles(Request &req, ServerConf &config);
-		int		findRouting(Request &req);
-		void	findStatusCode(Request &req);
-		void 	setSocket(int clientSocket) { _clientSocket = clientSocket; }
-		int 	getSocket() const { return _clientSocket; }
+		void		handleDefaultError(int code);
+		int			sendError(std::string &root, std::map<int, std::string> &errpages);
+		int			sendResp(Request &req, CGI *cgi);
+		int			findRouting(Request &req);
+		std::string	findStatusCode(int code);
+		void 		setSocket(int clientSocket) { _clientSocket = clientSocket; }
+		int 		getSocket() const { return _clientSocket; }
 		std::string getBody() const { return _body; }
-		size_t getDataSent() const { return _dataSent; }
-		void updateDataSent(size_t dataSent) { _dataSent += dataSent; }
+		size_t 		getDataSent() const { return _dataSent; }
+		void 		updateDataSent(size_t dataSent) { _dataSent += dataSent; }
 		std::string getFilePath() const { return _filePath; }
-		int		sendFileData();
-		int 	sendTextData();
-		void	checkMethod(Request &req);
-		void	checkHttpVersion(Request &req);
-		void	handleError(Request &req);
-		void	genListing();
-		void	findConfig(Request &req);
+		int			sendFileData();
+		int 		sendTextData();
+		int			checkMethod(Request &req);
+		int			checkHttpVersion(Request &req);
+		void		handleError(int code);
+		void		genListing();
+		void		findConfig(Request &req);
+		void		handleCGI();
+		std::string findErrorPage(int code);
 		std::string _root;
 		std::string _index;
-		ServerConf _config;
+		ServerConf	_config;
 	private:
 		int _error;
 		std::vector<ServerConf> _servers;

@@ -201,7 +201,6 @@ std::string Parser::parseUploadPath(std::string value) {
 
 ServerConf Parser::parseServerBody() {
     ServerConf server;
-
     while (!look("}")) {
         if (look("listen"))
             server.setNum(LISTEN, parseNumRules(LISTEN)); 
@@ -273,7 +272,9 @@ void   fillTokens(std::string line, Token tokens, std::vector<Token> &tokenArr)
     std::istringstream iss(line);
     std::string token;
     while (iss >> token) {
-        if (!token.empty() && (!token.compare("server") || !token.compare("{") || !token.compare("}") || !token.compare("location"))) {
+        if (token[0] == '#')
+            break;
+        else if (!token.empty() && (!token.compare("server") || !token.compare("{") || !token.compare("}") || !token.compare("location"))) {
             tokens._type = token;
             tokens._value = token;
         }

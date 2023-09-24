@@ -15,6 +15,13 @@
 #include "Utils.hpp"
 #include "Macros.hpp"
 # include "Config.hpp"
+# define MAX_IDLE_TIME 10
+
+struct Client {
+	int socket;
+	bool keepAlive;
+	time_t lastActivity;
+};
 
 class Server {
 	private:
@@ -27,7 +34,7 @@ class Server {
 		std::map<int, Request> _requests;
     	std::map<int, Response> _responses;
 		std::map<int, CGI> _cgis;
-		std::vector<int> _clients;
+		std::vector<Client> _clients;
 		std::vector<ServerConf> _serverConf;
 	public:
 	char **envi;

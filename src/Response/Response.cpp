@@ -60,40 +60,56 @@ Response::~Response()
 {
 }
 
-void Response::findStatusCode(Request &req)
+std::string Response::findStatusCode(int code)
 {
-    unused(req);
-    _status_code = "200 OK";
-    switch (_error)
+    std::string status_code;
+    switch (code)
     {
-    case 301:
-        _status_code = "301 Moved Permanently";
-        break;
-    case 404:
-        _status_code = "404 Not Found";
-        break;
-    case 405:
-        _status_code = "405 Method Not Allowed";
-        break;
-    case 500:
-        _status_code = "500 Internal Server Error";
-        break;
-    case 501:
-        _status_code = "501 Not Implemented";
-        break;
-    case 505:
-        _status_code = "505 HTTP Version Not Supported";
-        break;
-    default:
-        break;
+        case 0:
+            status_code = "200 OK";
+            break;
+        case 301:
+            status_code = "301 Moved Permanently";
+            break;
+        case 302:
+            status_code = "302 Moved Temporarily";
+            break;
+        case 404:
+            status_code = "404 Not Found";
+            break;
+        case 405:
+            status_code = "405 Method Not Allowed";
+            break;
+        case 413:
+            status_code = "413 Payload Too Large";
+            break;
+        case 500:
+            status_code = "500 Internal Server Error";
+            break;
+        case 501:
+            status_code = "501 Not Implemented";
+            break;
+        case 505:
+            status_code = "505 HTTP Version Not Supported";
+            break;
+        default:
+            status_code = "200 OK";
+            break;
     }
+    return status_code;
 }
 
+/**
+ * @brief Finds the appropriate location block for the given request and sets the corresponding response properties.
+ * 
+ * @param req The request object.
+ * @return int Returns CONTINUE if the request can be processed, otherwise returns an error code.
+ */
 int Response::findRouting(Request &req)
 {
     std::vector<Location> &locations = _config.location;
 
-    for (std::vector<Location>::iterator it = locations.begin(); it != locations.end(); it++)
+    for (std::vector<Location>::iterator it = locations.begin(); it != locations.end(); ++it)
     {
         if (req.getPath().find(it->getLocationName()) == 0)
         {
@@ -104,32 +120,48 @@ int Response::findRouting(Request &req)
             _errorPages = it->getErrorPages();
             _methods = it->getMethods();
             _redirect = it->getReturned();
+
             int idx = req.getPath().find(it->getLocationName());
             std::string locationName = it->getLocationName();
-            std::string relativePath = req.getPath().find_first_of(locationName) == 0 ? req.getPath().substr(locationName.length()) : req.getPath().substr(0, idx);
-            _filePath = constructFilePath(relativePath, _root, _index);
-            
-            if (_redirect.empty() == false && (req.getPath().substr(it->getLocationName().length()) == "/" || req.getPath().substr(it->getLocationName().length()) == "") && req.getMethod() == "GET")
+            std::string relativePath = (req.getPath().find_first_of(locationName) == 0) ?
+                                      req.getPath().substr(locationName.length()) :
+                                      req.getPath().substr(0, idx);
+
+            _filePath = constructFilePath(relativePath, _root, "");
+
+            if (isDirectory(_filePath.c_str()))
+                _filePath = constructFilePath(relativePath, _root, _index);
+
+            if (_filePath[_filePath.length() - 1] == '/')
+                _filePath = _filePath.substr(0, _filePath.length() - 1);
+
+            if (!_redirect.empty() && (req.getPath().substr(it->getLocationName().length()) == "/" ||
+                                       req.getPath().substr(it->getLocationName().length()) == "") &&
+                req.getMethod() == "GET")
             {
                 _error = 301;
                 return _error;
             }
-            if (_autoindex == true)
+
+            if (_autoindex)
             {
                 _filePath = constructFilePath(relativePath, _root, "");
                 _isTextStream = true;
                 return CONTINUE;
             }
+
             return CONTINUE;
         }
     }
+
     _root = _config.getString(ROOT);
     _index = _config.getString(INDEX);
     _autoindex = _config.getAutoindex();
     _errorPages = _config.getErrorPages();
     _methods = _config.getMethods();
     _filePath = constructFilePath(req.getPath(), _root, _index);
-    if (_autoindex == true)
+
+    if (_autoindex)
     {
         _filePath = constructFilePath(req.getPath(), _root, "");
         _isTextStream = true;
@@ -140,41 +172,81 @@ int Response::findRouting(Request &req)
         _filePath = constructFilePath(req.getPath(), _root, _index);
         _isTextStream = false;
     }
+
     return CONTINUE;
 }
 
-void Response::handleDefaultError(Request &req)
+
+/**
+ * @brief Handles default error by setting the status code, body, headers and initializing headers.
+ * 
+ * @param code The error code.
+ */
+void Response::handleDefaultError(int code)
 {
-    unused(req);
     std::stringstream ss;
-    ss << "<center><h1>" << _error << " Error</h1></center>";
+
+    _status_code = findStatusCode(code);
+    ss << "<center><h1>" << _status_code << "</h1></center>";
     _body = ss.str();
     _fileSize = _body.size();
     _headers["Content-Type"] = "text/html";
     _isTextStream = true;
+    InitHeaders(_request);
 }
 
-void Response::handleError(Request &req)
+void Response::handleError(int code)
 {
-    if (_error == 301)
+    if (code == 301)
     {
+        _status_code = findStatusCode(code);
         _fileSize = 0;
         _isTextStream = true;
+        InitHeaders(_request);
     }
     else
     {
+        _status_code = findStatusCode(code);
+        std::string errorPage = "";
         if (_errorPages.empty())
         {
-            _errorPages = _config.getErrorPages();
-            if (_errorPages.empty())
+            if (_location.getErrorPages().empty())
             {
-                handleDefaultError(req);
-                return;
+               if (_config.getErrorPages().empty())
+               {
+                   handleDefaultError(code);
+                   return;
+               }
+               else
+               {
+                   _errorPages = _config.getErrorPages();
+               }
+            }
+            else
+            {
+                _errorPages = _location.getErrorPages();
             }
         }
-        _filePath = constructFilePath(_errorPages[_error], _root, _index);
-        _fd = open(_filePath.c_str(), O_RDONLY);
+        if (_errorPages.find(code)->second.find("/") == 0)
+            errorPage = _errorPages.find(code)->second;
+        else {
+            errorPage = constructFilePath(_errorPages.find(code)->second, _root, "");
+        }
+        if (isDirectory(errorPage.c_str())) {
+            handleDefaultError(code);
+            return;
+        }
+        _fd = open(errorPage.c_str(), O_RDONLY);
+        if (_fd == -1)
+        {
+            handleDefaultError(code);
+            return;
+        }
+        _fileSize = lseek(_fd, 0, SEEK_END);
+        lseek(_fd, 0, SEEK_SET);
+        _isTextStream = false;
     }
+    InitHeaders(_request);
 }
 
 std::string findDirname(const std::string& path, const std::string& root)
@@ -206,7 +278,7 @@ void Response::genListing()
 
     if (dir == NULL)
     {
-        _error = 69;
+        _error = ISFILE;
         return;
     }
 
@@ -228,58 +300,50 @@ void Response::genListing()
     _body = ss.str();
     _fileSize = _body.size();
     _isTextStream = true;
+    InitHeaders(_request);
+    
 }
 
 
 void Response::InitFile(Request &req) {
     int routing = findRouting(req);
+    if (checkMethod(req) == ERROR)
+        throw HTTPException("Method not allowed", 405);
+    if (checkHttpVersion(req) == ERROR)
+        throw HTTPException("HTTP version not supported", 505);
     _error = req.getError();
     if (_error != 0) {
-        handleError(req);
-        if (_fd == -1) {
-            handleDefaultError(req);
-        }
-        return;
+        throw HTTPException("Request error", _error);
+    }
+    if (routing == 301) {
+        throw HTTPException("Moved Temporarily", 302);
     }
 
     if (routing == 404 || (isDirectory(_filePath.c_str()) && _autoindex == false)) {
         _error = 404;
-        handleError(req);
-        if (_fd == -1) {
-            handleDefaultError(req);
-        }
-        return;
+        throw HTTPException("Not Found", 404);
     }
 
-    if (routing == 301) {
-        handleError(req);
-        return;
-    }
 
     if (_autoindex && _isTextStream) {
         genListing();
-        if (_error != 69) {
+        if (_error != ISFILE) {
+            
             return;
         }
         _isTextStream = false;
         _error = 0;
     }
-
     _fd = open(_filePath.c_str(), O_RDONLY);
-    if (_fd == -1) {
-        _error = 404;
-        handleError(req);
-        if (_fd == -1) {
-            handleDefaultError(req);
-        }
-    }
-
+    if (_fd == -1 && _error != ISFILE)
+        throw HTTPException("Not Found", 404);
     _fileSize = lseek(_fd, 0, SEEK_END);
     lseek(_fd, 0, SEEK_SET);
+    InitHeaders(req);
 }
 
 
-void Response::checkMethod(Request &req)
+int Response::checkMethod(Request &req)
 {
     std::string const &method = req.getMethod();
     if (_methods.empty())
@@ -291,28 +355,29 @@ void Response::checkMethod(Request &req)
     for (std::vector<std::string>::iterator it = _methods.begin(); it != _methods.end(); it++)
     {
         if (*it == method)
-            return;
+            return CONTINUE;
     }
     _error = 405;
-    handleError(req);
+    throw HTTPException("Method not allowed", 405);
+    return ERROR;
 }
 
-void Response::checkHttpVersion(Request &req)
+int Response::checkHttpVersion(Request &req)
 {
     std::string const &version = req.getHTTPVersion();
     if (version != "HTTP/1.1")
     {
         _error = 505;
-        handleError(req);
+        throw HTTPException("HTTP version not supported", 505);
+        return ERROR;
     }
+    return CONTINUE;
 }
 
 void Response::InitHeaders(Request &req)
 {
     std::stringstream ss;
-    checkHttpVersion(req);
-    checkMethod(req);
-    findStatusCode(req);
+    
     _headers["Server"] = "Webserv/1.0";
 
     // Check if Content-Type is not set
@@ -350,7 +415,6 @@ int Response::sendFileData()
     int res = sendfile(_fd, _clientSocket, _offset, &bytesSent, NULL, 0);
     if (res == -1 && _offset >= _fileSize)
     {
-        std::cout << "error" << std::endl;
         close(_fd);
         return DONE;
     }
@@ -441,70 +505,57 @@ void    Response::findConfig(Request &req)
     _config = _servers[0];
 }
 
-int    Response::createUploadedfiles(Request &req, ServerConf &config) {
-    BoundaryBody *boundaryBody = req.getBoundaryBody();
-    std::string uploadPath = config.getString(UPLOAD_PATH);
-    if (boundaryBody && req.getMethod() == "POST") {
-        for (BoundaryBody *body = boundaryBody; body != NULL; body = body->next)
-        {
-            if (body->_isFile == true)
-            {
-                std::string filePath = uploadPath + body->filename;
-                int fd = open(filePath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
-                if (fd == -1)
-                {
-                    _error = 500;
-                    handleError(req);
-                    if (_fd == -1)
-                    {
-                        handleDefaultError(req);
-                        return DONE;
-                    }
-                    return DONE;
-                }
-                write(fd, body->_body.c_str(), body->_body.length());
-                close(fd);
-            }
-        }
-    }
-    return CONTINUE;
-}
 
-int Response::sendResp(Request &req, CGI *cgi)
-{
-    findConfig(req);
-    _cgi = cgi;
+void    Response::handleCGI() {
     if (_cgi && _cgi->isCgiDone() == true)
     {
         _fd = _cgi->getFd();
         _error = _cgi->getError();
         if (_error != 0)
-        {
-            handleError(req);
-            if (_fd == -1)
-                handleDefaultError(req);
-        }
+            throw HTTPException("CGI error", _error);
         else {
             _isCGI = true;
             _fileSize = lseek(_fd, 0, SEEK_END);
             lseek(_fd, 0, SEEK_SET);
-            _headers["Content-Length"] = std::to_string(_fileSize);
             _headers = _cgi->getHeaders();
+            _headers["Content-Length"] = std::to_string(_fileSize);
             std::map<std::string, std::string> cookies = _cgi->getCookies();
             for (std::map<std::string, std::string>::iterator it = cookies.begin(); it != cookies.end(); it++)
                 _headers["Set-Cookie"] = it->first + "=" + it->second;
             
         }
     }
-    std::stringstream ss;
-    if (_fd == 0 && _isCGI == false)
-    {
-        InitFile(req);
-        InitHeaders(req);
+}
+
+int Response::sendResp(Request &req, CGI *cgi)
+{
+    try {
+        findConfig(req);
+        _cgi = cgi;
+        handleCGI();
+        if (_fd == 0 && _isCGI == false) {
+            InitFile(req);
+        }
     }
+    catch (HTTPException &e) {
+        _error = e.getErrorCode();
+        handleError(e.getErrorCode());
+    
+    }
+    catch (std::exception &e) {
+        _error = 500;
+        handleError(_error);
+    
+    }
+    catch (...) {
+        _error = 500;
+        handleError(_error);
+    }
+    std::stringstream ss;
     if (_headersSent == false)
     {
-        findStatusCode(req);
+        if (_error == 0)
+            _status_code = findStatusCode(0);
         ss << "HTTP/1.1 " << _status_code << "\r\n";
         for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++)
         {
@@ -522,4 +573,5 @@ int Response::sendResp(Request &req, CGI *cgi)
     else
         return sendFileData();
     return CONTINUE;
+
 }

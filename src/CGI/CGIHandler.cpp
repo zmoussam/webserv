@@ -1,4 +1,4 @@
-# include "../../inc/CGIHandler.hpp"
+# include "CGIHandler.hpp"
 CGI::CGI()
 {
   _root = "www/";
@@ -165,15 +165,20 @@ std::map<std::string, std::string> CGI::parseCookies(std::string cookisat)
 
 void CGI::parseHeaders(std::string headers)
 {
-  std::string headerKey[5] = {"Content-Type", "Content-Length", "Location", "Server", "Connection"};
-  for (int i = 0; i < 5; i++)
+  for (std::string::size_type i = 0; i < headers.size(); i++)
   {
-    if (headers.find(headerKey[i]) != std::string::npos)
+    std::string::size_type pos = headers.find(":");
+    if (pos != std::string::npos)
     {
-      std::string::size_type pos = headers.find(headerKey[i]);
+      std::string key = headers.substr(0, pos);
+      while (key[0] == '\r' || key[0] == '\n' || key[0] == ' ')
+        key.erase(0, 1);
       std::string::size_type pos2 = headers.find("\r\n", pos);
-      std::string value = headers.substr(pos + headerKey[i].length() + 1, pos2 - pos - headerKey[i].length() - 1);
-      _headers[headerKey[i]] = value;
+      std::string value = headers.substr(pos + 1, pos2 - pos - 1);
+      while (value[0] == '\r' || value[0] == '\n' || value[0] == ' ')
+        value.erase(0, 1);
+      _headers[key] = value;
+      headers.erase(0, pos2 + 2);
     }
   }
 }
@@ -270,10 +275,18 @@ int CGI::CGIHandler(Request &req, Response &resp, int clientSocket)
         exit (_error_code);
       if (req.getCookies().size() > 0)
         setenv("HTTP_COOKIE", req.getCookies().c_str(), 1);
+      std::map<std::string, std::string> headers = req.getHeaders();
+      for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++)
+      {
+        if (it->first == "Content-Length")
+          continue;
+        std::string key = HTTP_ENV + it->first;
+        std::transform(key.begin(), key.end(), key.begin(), ::toupper);
+        setenv(key.c_str(), it->second.c_str(), 1);
+      }
       setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
       setenv("REQUEST_URI", req.getPath().c_str(), 1);
       setenv("QUERY_STRING", req.getQueries().c_str(), 1);
-      setenv("CONTENT_TYPE", req.getHeaders()["Content-Type"].c_str(), 1);
       setenv("SCRIPT_NAME", req.getPath().c_str(), 1);
       setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
       setenv("PATH_INFO", req.getPath().c_str(), 1);
