@@ -97,7 +97,7 @@ int Server::start(void) {
 
 int Server::addToSets(fd_set& masterSet) {
     for (size_t i = 0; i < _clients.size(); i++) {
-        FD_SET(_clients[i], &masterSet);
+        FD_SET(_clients[i].socket, &masterSet);
     }
     return OK;
 }
@@ -113,17 +113,20 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set& masterSet) 
         }
         acceptClientConnection(clientSocket, masterSet);
     }
-    
+    time_t currentTime = time(NULL);
     int res = 0;
     for (size_t i = 0; i < _clients.size(); i++) {
-        int clientSocket = _clients[i];
+        int clientSocket = _clients[i].socket;
 
         if (FD_ISSET(clientSocket, &readSet)) {
             int req = _requests[clientSocket].handleRequest(_port);
+            _clients[i].lastActivity = time(NULL);
+            _clients[i].keepAlive = _requests[clientSocket].isKeepAlive();
             if (req == DISCONNECTED) {
                 closeClientConnection(clientSocket, i, masterSet);
                 res = 0;
             }
+            
         }
 
         if (FD_ISSET(clientSocket, &writeSet) && _requests[clientSocket].isHeadersRead() && _requests[clientSocket].isBodyRead()) {
@@ -142,6 +145,9 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set& masterSet) 
                 res = 0; 
             }
         }
+        if (currentTime - _clients[i].lastActivity >= MAX_IDLE_TIME) {
+            closeClientConnection(clientSocket, i, masterSet);
+        }
     }
     return OK;
 }
@@ -158,7 +164,12 @@ void Server::closeClientConnection(int clientSocket, size_t index, fd_set& maste
 
 void    Server::acceptClientConnection(int clientSocket, fd_set& masterSet) {
     FD_SET(clientSocket, &masterSet);
-    _clients.push_back(clientSocket);
+    Client client;
+    client.socket = clientSocket;
+    client.keepAlive = false;
+    client.lastActivity = time(NULL);
+    _clients.push_back(client);
+    FD_SET(clientSocket, &masterSet);
     _requests[clientSocket] = Request(clientSocket, _serverConf);
     _responses[clientSocket] = Response(clientSocket, _serverConf);
     _cgis[clientSocket] = CGI(clientSocket, _serverConf);
