@@ -304,9 +304,8 @@ void    Request::findConfig()
 void Request::creatFile(std::string fileName, std::string body)
 {
     std::ofstream file(fileName.c_str());
-    std::cout << "URI: " << _URI << std::endl;
     if (!file) {
-        std::cout << "Failed to open the file!" << std::endl;
+        _error = 500;
     }
     else 
     {

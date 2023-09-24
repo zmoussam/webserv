@@ -44,7 +44,7 @@ class Response
 		void    	InitFile(Request &req);
 		void    	InitHeaders(Request &req);
 		std::string checkFilePath(Request &req);
-		void		handleDefaultError(int code, std::string msg);
+		void		handleDefaultError(int code);
 		int			sendError(std::string &root, std::map<int, std::string> &errpages);
 		int			sendResp(Request &req, CGI *cgi);
 		int			findRouting(Request &req);
@@ -59,10 +59,11 @@ class Response
 		int 		sendTextData();
 		int			checkMethod(Request &req);
 		int			checkHttpVersion(Request &req);
-		void		handleError(int code, std::string msg);
+		void		handleError(int code);
 		void		genListing();
 		void		findConfig(Request &req);
 		void		handleCGI();
+		std::string findErrorPage(int code);
 		std::string _root;
 		std::string _index;
 		ServerConf	_config;

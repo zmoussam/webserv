@@ -65,6 +65,9 @@ std::string Response::findStatusCode(int code)
     std::string status_code;
     switch (code)
     {
+        case 0:
+            status_code = "200 OK";
+            break;
         case 301:
             status_code = "301 Moved Permanently";
             break;
@@ -96,11 +99,17 @@ std::string Response::findStatusCode(int code)
     return status_code;
 }
 
+/**
+ * @brief Finds the appropriate location block for the given request and sets the corresponding response properties.
+ * 
+ * @param req The request object.
+ * @return int Returns CONTINUE if the request can be processed, otherwise returns an error code.
+ */
 int Response::findRouting(Request &req)
 {
     std::vector<Location> &locations = _config.location;
 
-    for (std::vector<Location>::iterator it = locations.begin(); it != locations.end(); it++)
+    for (std::vector<Location>::iterator it = locations.begin(); it != locations.end(); ++it)
     {
         if (req.getPath().find(it->getLocationName()) == 0)
         {
@@ -111,32 +120,48 @@ int Response::findRouting(Request &req)
             _errorPages = it->getErrorPages();
             _methods = it->getMethods();
             _redirect = it->getReturned();
+
             int idx = req.getPath().find(it->getLocationName());
             std::string locationName = it->getLocationName();
-            std::string relativePath = req.getPath().find_first_of(locationName) == 0 ? req.getPath().substr(locationName.length()) : req.getPath().substr(0, idx);
-            _filePath = constructFilePath(relativePath, _root, _index);
-            
-            if (_redirect.empty() == false && (req.getPath().substr(it->getLocationName().length()) == "/" || req.getPath().substr(it->getLocationName().length()) == "") && req.getMethod() == "GET")
+            std::string relativePath = (req.getPath().find_first_of(locationName) == 0) ?
+                                      req.getPath().substr(locationName.length()) :
+                                      req.getPath().substr(0, idx);
+
+            _filePath = constructFilePath(relativePath, _root, "");
+
+            if (isDirectory(_filePath.c_str()))
+                _filePath = constructFilePath(relativePath, _root, _index);
+
+            if (_filePath[_filePath.length() - 1] == '/')
+                _filePath = _filePath.substr(0, _filePath.length() - 1);
+
+            if (!_redirect.empty() && (req.getPath().substr(it->getLocationName().length()) == "/" ||
+                                       req.getPath().substr(it->getLocationName().length()) == "") &&
+                req.getMethod() == "GET")
             {
                 _error = 301;
                 return _error;
             }
-            if (_autoindex == true)
+
+            if (_autoindex)
             {
                 _filePath = constructFilePath(relativePath, _root, "");
                 _isTextStream = true;
                 return CONTINUE;
             }
+
             return CONTINUE;
         }
     }
+
     _root = _config.getString(ROOT);
     _index = _config.getString(INDEX);
     _autoindex = _config.getAutoindex();
     _errorPages = _config.getErrorPages();
     _methods = _config.getMethods();
     _filePath = constructFilePath(req.getPath(), _root, _index);
-    if (_autoindex == true)
+
+    if (_autoindex)
     {
         _filePath = constructFilePath(req.getPath(), _root, "");
         _isTextStream = true;
@@ -147,23 +172,30 @@ int Response::findRouting(Request &req)
         _filePath = constructFilePath(req.getPath(), _root, _index);
         _isTextStream = false;
     }
+
     return CONTINUE;
 }
 
-void Response::handleDefaultError(int code, std::string msg)
+
+/**
+ * @brief Handles default error by setting the status code, body, headers and initializing headers.
+ * 
+ * @param code The error code.
+ */
+void Response::handleDefaultError(int code)
 {
     std::stringstream ss;
 
-    ss << "<center><h1>" << code << " " << msg << "</h1></center>";
+    _status_code = findStatusCode(code);
+    ss << "<center><h1>" << _status_code << "</h1></center>";
     _body = ss.str();
     _fileSize = _body.size();
     _headers["Content-Type"] = "text/html";
     _isTextStream = true;
-    _status_code = findStatusCode(code);
     InitHeaders(_request);
 }
 
-void Response::handleError(int code, std::string msg)
+void Response::handleError(int code)
 {
     if (code == 301)
     {
@@ -175,40 +207,39 @@ void Response::handleError(int code, std::string msg)
     else
     {
         _status_code = findStatusCode(code);
-        
+        std::string errorPage = "";
         if (_errorPages.empty())
         {
-            _errorPages = _config.getErrorPages();
-            std::cout << code << std::endl;
-            if (_errorPages.empty() || _errorPages[code].empty())
+            if (_location.getErrorPages().empty())
             {
-                handleDefaultError(code, msg);
-                return;
+               if (_config.getErrorPages().empty())
+               {
+                   handleDefaultError(code);
+                   return;
+               }
+               else
+               {
+                   _errorPages = _config.getErrorPages();
+               }
+            }
+            else
+            {
+                _errorPages = _location.getErrorPages();
             }
         }
-        if (_errorPages[code].find('/') == 0)
-        {
-            _filePath = _errorPages[code];
+        if (_errorPages.find(code)->second.find("/") == 0)
+            errorPage = _errorPages.find(code)->second;
+        else {
+            errorPage = constructFilePath(_errorPages.find(code)->second, _root, "");
         }
-        else
-        {
-            _filePath = _root + "/" + _errorPages[code];
+        if (isDirectory(errorPage.c_str())) {
+            handleDefaultError(code);
+            return;
         }
-        if (isDirectory(_filePath.c_str()))
-        {
-            _filePath = constructFilePath(_filePath, _root, _index);
-            _isTextStream = false;
-        }
-        else
-        {
-            _isTextStream = true;
-        }
-        _fd = open(_filePath.c_str(), O_RDONLY);
-        std::cout << "FD: " << _fd << std::endl;
-        std::cout << "Filepath: " << _filePath << std::endl;
+        _fd = open(errorPage.c_str(), O_RDONLY);
         if (_fd == -1)
         {
-            handleDefaultError(code, msg);
+            handleDefaultError(code);
             return;
         }
         _fileSize = lseek(_fd, 0, SEEK_END);
@@ -269,6 +300,8 @@ void Response::genListing()
     _body = ss.str();
     _fileSize = _body.size();
     _isTextStream = true;
+    InitHeaders(_request);
+    
 }
 
 
@@ -282,15 +315,15 @@ void Response::InitFile(Request &req) {
     if (_error != 0) {
         throw HTTPException("Request error", _error);
     }
+    if (routing == 301) {
+        throw HTTPException("Moved Temporarily", 302);
+    }
 
     if (routing == 404 || (isDirectory(_filePath.c_str()) && _autoindex == false)) {
         _error = 404;
         throw HTTPException("Not Found", 404);
     }
 
-    if (routing == 301) {
-        throw HTTPException("Moved Temporarily", 302);
-    }
 
     if (_autoindex && _isTextStream) {
         genListing();
@@ -506,21 +539,23 @@ int Response::sendResp(Request &req, CGI *cgi)
     }
     catch (HTTPException &e) {
         _error = e.getErrorCode();
-        handleError(e.getErrorCode(), std::string(e.what()));
+        handleError(e.getErrorCode());
     
     }
     catch (std::exception &e) {
         _error = 500;
-        handleError(500, "Internal Server Error");
+        handleError(_error);
     
     }
     catch (...) {
         _error = 500;
-        handleError(500, "Internal Server Error");
+        handleError(_error);
     }
     std::stringstream ss;
     if (_headersSent == false)
     {
+        if (_error == 0)
+            _status_code = findStatusCode(0);
         ss << "HTTP/1.1 " << _status_code << "\r\n";
         for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++)
         {
