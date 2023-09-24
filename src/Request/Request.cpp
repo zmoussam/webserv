@@ -402,7 +402,8 @@ void Request::parsseBody(size_t &_bodyPos)
                 else
                 {
                     _body = _request.substr(_bodyPos + 4 , _bodySize);
-                    if (_method == "POST") 
+                    // if method is POST and the uri doesnt end with .py or .rb
+                    if (_method == "POST" && _URI.find(".py") == std::string::npos && _URI.find(".rb") == std::string::npos)
                     {
                         if (isMethodAllowed())
                         {
@@ -443,7 +444,6 @@ void Request::parsseBody(size_t &_bodyPos)
         else 
             _error = 413;
     }
-    std::cout << "_error: " << _error << std::endl;
 }
 std::string Request::getUploadPath()
 {

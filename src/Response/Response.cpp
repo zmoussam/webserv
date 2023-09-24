@@ -68,6 +68,12 @@ std::string Response::findStatusCode(int code)
         case 0:
             status_code = "200 OK";
             break;
+        case 201:
+            status_code = "201 Created";
+            break;
+        case 400:
+            status_code = "400 Bad Request";
+            break;
         case 301:
             status_code = "301 Moved Permanently";
             break;

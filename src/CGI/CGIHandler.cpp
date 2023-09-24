@@ -230,21 +230,28 @@ int CGI::executeCGIScript(int clientSocket) {
     std::string body;
     while (fgets(buffer, sizeof(buffer), pipe) != NULL)
         body += buffer;
-    if (body.find("\r\n\r\n") != std::string::npos)
+    std::string headers[] = {"Content-Type", "Content-Length", "Location", "Set-Cookie", "Server", "Connection"};
+    for (int i = 0; i < 6; i++)
     {
-      std::string::size_type pos = body.find("\r\n\r\n");
-      if (pos != std::string::npos)
+      if (body.find("\r\n\r\n") != std::string::npos && body.find(headers[i]) != std::string::npos)
       {
-        int fd = open(COOKIFILE, O_RDWR | O_CREAT | O_TRUNC, 0666);
-        if (fd == -1) {
-          _error_code = E500;
-          return -1;
+        std::cout << body << std::endl;
+        std::cout << "found header" << headers[i] << std::endl;
+        std::string::size_type pos = body.find("\r\n\r\n");
+        if (pos != std::string::npos)
+        {
+          int fd = open(COOKIFILE, O_RDWR | O_CREAT | O_TRUNC, 0666);
+          if (fd == -1) {
+            _error_code = E500;
+            return -1;
+          }
+          std::string tmp = body.substr(0, pos);
+          tmp += "\r\n\r\n";
+          write(fd, tmp.c_str(), tmp.size());
+          close(fd);
+          body.erase(0, pos + 4);
         }
-        std::string tmp = body.substr(0, pos);
-        tmp += "\r\n\r\n";
-        write(fd, tmp.c_str(), tmp.size());
-        close(fd);
-        body.erase(0, pos + 4);
+        break;
       }
     }
     pclose(pipe);
