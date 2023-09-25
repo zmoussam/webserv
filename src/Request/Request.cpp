@@ -45,9 +45,8 @@ int Request::waitForBody(size_t headerlength)
 
 // Receive the request from the client
 int Request::recvRequest() {
-	char buffer[1025] = {0};
+	char buffer[1000000];
     size_t headerlength = 0;
-    // std::cout << "check" << std::endl;
 	int readRes = recv(_clientSocket, buffer, sizeof(buffer) - 1, 0);
     // if recv() failed
     // std::cout << "readRes: " << readRes << std::endl;
