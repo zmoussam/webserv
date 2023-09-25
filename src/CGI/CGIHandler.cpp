@@ -162,23 +162,17 @@ std::map<std::string, std::string> CGI::parseCookies(std::string cookisat)
   }
   return _cookies;
 }
-
 void CGI::parseHeaders(std::string headers)
 {
-  for (std::string::size_type i = 0; i < headers.size(); i++)
+  std::string headerKey[5] = {"Content-Type", "Content-Length", "Location", "Server", "Connection"};
+  for (int i = 0; i < 5; i++)
   {
-    std::string::size_type pos = headers.find(":");
-    if (pos != std::string::npos)
+    if (headers.find(headerKey[i]) != std::string::npos)
     {
-      std::string key = headers.substr(0, pos);
-      while (key[0] == '\r' || key[0] == '\n' || key[0] == ' ')
-        key.erase(0, 1);
+      std::string::size_type pos = headers.find(headerKey[i]);
       std::string::size_type pos2 = headers.find("\r\n", pos);
-      std::string value = headers.substr(pos + 1, pos2 - pos - 1);
-      while (value[0] == '\r' || value[0] == '\n' || value[0] == ' ')
-        value.erase(0, 1);
-      _headers[key] = value;
-      headers.erase(0, pos2 + 2);
+      std::string value = headers.substr(pos + headerKey[i].length() + 1, pos2 - pos - headerKey[i].length() - 1);
+      _headers[headerKey[i]] = value;
     }
   }
 }
@@ -235,8 +229,6 @@ int CGI::executeCGIScript(int clientSocket) {
     {
       if (body.find("\r\n\r\n") != std::string::npos && body.find(headers[i]) != std::string::npos)
       {
-        std::cout << body << std::endl;
-        std::cout << "found header" << headers[i] << std::endl;
         std::string::size_type pos = body.find("\r\n\r\n");
         if (pos != std::string::npos)
         {

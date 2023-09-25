@@ -16,6 +16,7 @@ std::map<std::string, std::string> mimeTypes = getMimeTypes();
  */
 Server::Server(int port, std::vector<ServerConf> &servers) : _port(port), _serverConf(servers) {
     int reuse = 1;
+    int set = 1;
     _serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     fcntl(_serverSocket, F_SETFL, O_NONBLOCK);
     if (_serverSocket < 0) {
@@ -30,7 +31,10 @@ Server::Server(int port, std::vector<ServerConf> &servers) : _port(port), _serve
         std::cerr << "Error: setsockopt() failed" << std::endl;
         return;
     }
-
+    if (setsockopt(_serverSocket, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int)) < 0) {
+        std::cerr << "Error: setsockopt() failed" << std::endl;
+        return;
+    }
     if (bind(_serverSocket, (struct sockaddr*)&_serverAddress, sizeof(_serverAddress)) < 0) {
         std::cerr << "Error: bind() failed" << std::endl;
         std::cerr << strerror(errno) << std::endl;

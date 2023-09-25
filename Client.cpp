@@ -1,57 +1,58 @@
 #include <iostream>
+#include <unistd.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
 #include <cstring>
 
 int main() {
     // Create a socket
-    int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (clientSocket == -1) {
-        std::cerr << "Error creating socket." << std::endl;
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd == -1) {
+        std::cerr << "Failed to create socket." << std::endl;
         return 1;
     }
 
     // Set up the server address
     struct sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(8000); // HTTP port
-    serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1"); // localhost
+    serverAddr.sin_port = htons(8000);  // Replace with your server's port number
+    inet_pton(AF_INET, "127.0.0.1", &(serverAddr.sin_addr));  // Replace with your server's IP address
 
     // Connect to the server
-    if (connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
-        std::cerr << "Error connecting to server." << std::endl;
-        close(clientSocket);
+    if (connect(sockfd, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
+        std::cerr << "Failed to connect to the server." << std::endl;
+        close(sockfd);
         return 1;
     }
 
-    // Send an HTTP GET request
-    const char* request = "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n";
-	 int bytesSent = 0;
-	while (bytesSent < strlen(request))
-	{
-		send(clientSocket, &request[bytesSent], 5, 0);
-		std::cout << "bytesSent: " << bytesSent << std::endl;
-		bytesSent += 5;
-		sleep(1);
-	}
+    // Send a command to the server
+    const char* command = "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n";
+    ssize_t bytesSent = send(sockfd, command, strlen(command), 0);
+    if (bytesSent == -1) {
+        std::cerr << "Failed to send command to the server." << std::endl;
+        close(sockfd);
+        return 1;
+    }
 
+    // Close the socket
+    close(sockfd);
 
-    // Receive and print the response
+    // Optionally, you can wait for a response from the server before closing the socket
+    // Just uncomment the code below if you want to receive a reply from the server
+    /*
     char buffer[1024];
-    int bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
+    ssize_t bytesRead = recv(sockfd, buffer, sizeof(buffer), 0);
     if (bytesRead == -1) {
-        std::cerr << "Error receiving data." << std::endl;
-        close(clientSocket);
+        std::cerr << "Failed to receive reply from the server." << std::endl;
+        close(sockfd);
         return 1;
     }
 
-    std::cout << "Response:" << std::endl;
-    std::cout.write(buffer, bytesRead);
-
-    // Clean up and close the socket
-    close(clientSocket);
+    // Process the received data (e.g., print it)
+    std::cout << "Server reply: " << std::string(buffer, bytesRead) << std::endl;
+    */
 
     return 0;
 }

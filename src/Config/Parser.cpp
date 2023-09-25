@@ -132,6 +132,8 @@ std::vector<std::string> Parser::parseMethods()
     for (size_t i = 0; i < args.size(); i++) {
         if (std::find(methods.begin(), methods.end(), args[i]) != methods.end() || (args[i] != "GET" && args[i] != "POST" && args[i] != "DELETE"))
             throw std::runtime_error(NOT_VALID);
+        if (std::count(args[i].begin(), args[i].end(), '"') % 2 != 0)
+                throw std::runtime_error(NOT_VALID);
         methods.push_back(args[i]);
     }
     return methods;
