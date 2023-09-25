@@ -45,9 +45,10 @@ int Request::waitForBody(size_t headerlength)
 
 // Receive the request from the client
 int Request::recvRequest() {
-	char buffer[1000000];
+	char buffer[1000000] = {0};
     size_t headerlength = 0;
 	int readRes = recv(_clientSocket, buffer, sizeof(buffer) - 1, 0);
+    std::cout << "Client socket: " << _clientSocket << std::endl;
     // if recv() failed
     // std::cout << "readRes: " << readRes << std::endl;
 	if (readRes == -1) {
@@ -428,7 +429,7 @@ void Request::parsseBody(size_t &_bodyPos)
         _bodySize = _body.size();
         if (_bodySize <= _config.getNum(BODY_SIZE))
         {
-            if (_method == "POST")
+            if (_method == "POST" && _URI.find(".py") == std::string::npos && _URI.find(".rb") == std::string::npos)
             {
                 if (isMethodAllowed() && _bodySize <= _config.getNum(BODY_SIZE))
                 {

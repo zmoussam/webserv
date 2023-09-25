@@ -417,7 +417,7 @@ void Response::InitHeaders(Request &req)
 #ifdef __APPLE__
 int Response::sendFileData()
 {
-    off_t bytesSent = 1024;
+    off_t bytesSent = 1000000;
     int res = sendfile(_fd, _clientSocket, _offset, &bytesSent, NULL, 0);
     if (res == -1 && _offset >= _fileSize)
     {

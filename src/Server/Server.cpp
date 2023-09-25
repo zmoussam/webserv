@@ -130,7 +130,7 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set& masterSet) 
         }
 
         if (FD_ISSET(clientSocket, &writeSet) && _requests[clientSocket].isHeadersRead() && _requests[clientSocket].isBodyRead()) {
-            if (_requests[clientSocket].getPath().find(".py") != std::string::npos || _requests[clientSocket].getPath().find(".rb") != std::string::npos) {
+            if ((_requests[clientSocket].getPath().find(".py") != std::string::npos || _requests[clientSocket].getPath().find(".rb") != std::string::npos) && _requests[clientSocket].getError() == 0) {
                 res = _cgis[clientSocket].CGIHandler(_requests[clientSocket], _responses[clientSocket], clientSocket);
                 if (_cgis[clientSocket].isCgiDone()) {
                     res == -2 ? _cgis[clientSocket].setisCgiDone(false) : _cgis[clientSocket].setisCgiDone(true);
@@ -146,7 +146,7 @@ int Server::handleClients(fd_set& readSet, fd_set& writeSet, fd_set& masterSet) 
                 res = 0; 
             }
         } 
-        if (currentTime - _clients[i].lastActivity >= MAX_IDLE_TIME ) {
+        if (currentTime - _clients[i].lastActivity > MAX_IDLE_TIME && res == DONE) {
             std::cout << "Client timed out" << std::endl;
             closeClientConnection(clientSocket, i, masterSet);
         }
