@@ -42,10 +42,6 @@ int main(int ac, char **av) {
     }
 
     while (true) {
-        for (size_t i = 0; i < servers.size(); i++) {
-            servers[i].addToSets(masterSet);
-        }
-
         readSet = masterSet;
         writeSet = masterSet;
         int selectRes = select(FD_SETSIZE, &readSet, &writeSet, NULL, NULL);

@@ -11,7 +11,7 @@ ServerConf::ServerConf() {
     this->_bodySize = 100000;
     this->_host = "127.0.0.1";
     this->_serverName = "";
-    this->_listen = 0;
+    this->_listen = 8000;
     this->_root = "";
     this->_index = "";
     this->_uploadPath = "upload/";

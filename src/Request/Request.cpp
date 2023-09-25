@@ -48,8 +48,6 @@ int Request::recvRequest() {
 	char buffer[1000000] = {0};
     size_t headerlength = 0;
 	int readRes = recv(_clientSocket, buffer, sizeof(buffer) - 1, 0);
-    std::cout << "Client socket: " << _clientSocket << std::endl;
-    // if recv() failed
     // std::cout << "readRes: " << readRes << std::endl;
 	if (readRes == -1) {
         std::cerr << "Error: recv() failed" << std::endl;
