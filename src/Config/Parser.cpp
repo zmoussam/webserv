@@ -21,15 +21,8 @@ Token Parser::match(std::string type) {
 
 bool checkQuotes(std::string &line)
 {
-    size_t count = 0;
-    for (size_t i = 0; i < line.size(); ++i) {
-        if (line[i] == '"') {
-            count++;
-        }
-    }
-    if (count % 2 != 0)
-        throw std::runtime_error(NOT_VALID);
-    return (count % 2 == 0);
+    size_t openQuote = std::count(line.begin(), line.end(), '"');
+    return(openQuote % 2 == 0);
 }
 
 size_t parseNum(std::string str) {
@@ -130,10 +123,8 @@ std::vector<std::string> Parser::parseMethods()
 
     args = splitArgs(match("value")._value);
     for (size_t i = 0; i < args.size(); i++) {
-        if (std::find(methods.begin(), methods.end(), args[i]) != methods.end() || (args[i] != "GET" && args[i] != "POST" && args[i] != "DELETE"))
+        if ((std::find(methods.begin(), methods.end(), args[i]) != methods.end() || (args[i] != "GET" && args[i] != "POST" && args[i] != "DELETE")))
             throw std::runtime_error(NOT_VALID);
-        if (std::count(args[i].begin(), args[i].end(), '"') % 2 != 0)
-                throw std::runtime_error(NOT_VALID);
         methods.push_back(args[i]);
     }
     return methods;
@@ -285,7 +276,7 @@ void   fillTokens(std::string line, Token tokens, std::vector<Token> &tokenArr)
             tokens._type = parseKey(token);
             tokens._value = token;
         }
-        else if (!token.empty() && token[0] == '"')
+        else if (!token.empty() && token[0] == '"' && checkQuotes(token))
         {
             tokens._type = "value";
             tokens._value = token;
