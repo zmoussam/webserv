@@ -140,13 +140,17 @@ Request::Request() :
 void Request::parsseRequest()
 {
     size_t nextPos = 0;
-    parsseMethod(nextPos); // parse the method of the request (GET, POST, DELETE)
-    parssePath_Queries(nextPos); // parse the path and the queries of the request
-    parsseHTTPversion(nextPos); // parse the HTTP version of the request
-    parsseHeaders(nextPos); // parse the headers of the request and fill the headers map
-    parsseBody(nextPos); // parse the body of the request and fill the body string
-    HandelDeleteMethod(); // handle the delete method
-    // std::cout << _request << std::endl;
+    parsseMethod(nextPos);
+    if (_error!= 400)
+    {
+        parssePath_Queries(nextPos); // parse the path and the queries of the request
+        parsseHTTPversion(nextPos); // parse the HTTP version of the request
+        parsseHeaders(nextPos); // parse the headers of the request and fill the headers map
+        parsseBody(nextPos); // parse the body of the request and fill the body string
+        HandelDeleteMethod(); // handle the delete method
+        // std::cout << _request << std::endl;
+        // parse the method of the request (GET, POST, DELETE)
+    } 
 
 }
 
@@ -155,6 +159,8 @@ void Request::parsseMethod(size_t &methodPos)
     // loop until the method is read or the end of the request is reached
     for (; methodPos < _requestLength && _request[methodPos] != ' '; methodPos++)
         _method += _request[methodPos];
+    if (_method != "GET" && _method != "POST" && _method != "DELETE")
+        _error = 400; // method not implemented (not GET, POST or DELETE
 }
 
 void Request::parssePath_Queries(size_t &URI_Pos)
