@@ -142,12 +142,15 @@ void Request::parsseRequest()
     if (_error!= 400)
     {
         parssePath_Queries(nextPos); // parse the path and the queries of the request
-        parsseHTTPversion(nextPos); // parse the HTTP version of the request
-        parsseHeaders(nextPos); // parse the headers of the request and fill the headers map
-        parsseBody(nextPos); // parse the body of the request and fill the body string
-        HandelDeleteMethod(); // handle the delete method
-        // std::cout << _request << std::endl;
-        // parse the method of the request (GET, POST, DELETE)
+        if (_error != 403)
+        {
+            parsseHTTPversion(nextPos); // parse the HTTP version of the request
+            parsseHeaders(nextPos); // parse the headers of the request and fill the headers map
+            parsseBody(nextPos); // parse the body of the request and fill the body string
+            HandelDeleteMethod(); // handle the delete method
+            // std::cout << _request << std::endl;
+            // parse the method of the request (GET, POST, DELETE)
+        } 
     } 
 
 }
@@ -180,6 +183,8 @@ void Request::parssePath_Queries(size_t &URI_Pos)
     else {
         _URI = URI;
     }
+    if (URI.find("..") != std::string::npos)
+        _error = 403;
 }
 
 void Request::parsseHTTPversion(size_t &_httpversion_Pos)
@@ -319,10 +324,12 @@ void Request::creatFile(std::string fileName, std::string body)
     }
 }
 
+
 // create the file if the body is a file and the body size is less than the max body size
 void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
 {
-    size_t filenamePos = headBoundaryBody->headers["Content-Disposition"].find("filename");
+
+    size_t filenamePos = headBoundaryBody->headers["Content-Disposition"].rfind("; filename=");
     if (filenamePos == std::string::npos)
     {
         headBoundaryBody->filename = "";
@@ -330,12 +337,13 @@ void Request::creatUploadFile(BoundaryBody *headBoundaryBody)
     }
     else 
     {
-        headBoundaryBody->filename = headBoundaryBody->headers["Content-Disposition"].substr(filenamePos + 10, \
-        headBoundaryBody->headers["Content-Disposition"].length() - filenamePos - 11);
+        headBoundaryBody->filename = headBoundaryBody->headers["Content-Disposition"].substr(filenamePos + 12, \
+        headBoundaryBody->headers["Content-Disposition"].length() - filenamePos - 13);
         headBoundaryBody->_isFile = true;
         std::string uplaodPath = getUploadPath();
         creatFile(uplaodPath + headBoundaryBody->filename, headBoundaryBody->_body);
     }
+        
 }
 
 void Request::getBoundaries(size_t &_bodyPos)
